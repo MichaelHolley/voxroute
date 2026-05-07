@@ -59,6 +59,7 @@ export function useThreeScene(
   let flyRafId: number | null = null;
   let flyStartTime: number | null = null;
   let scenePositions: THREE.Vector3[] = [];
+  let flyCurve: THREE.CatmullRomCurve3 | null = null;
   const FLY_DURATION = 22000;
 
   const orbitState: OrbitState = {
@@ -111,17 +112,30 @@ export function useThreeScene(
     updateCameraFromOrbit();
 
     routeGroup = new THREE.Group();
-    const tubeR = 0.45;
-    const radSeg = 8;
+    const tubeR = 0.22;
+    const radSeg = 6;
 
-    for (let i = 0; i < pts.length - 1; i++) {
-      const grade = computeGrade(pts[i], pts[i + 1]);
+    // One smooth curve — no segment joints/rings, arc-length parameterized for fly
+    flyCurve = new THREE.CatmullRomCurve3(pos);
+    flyCurve.getLength(); // pre-compute arc-length LUT
+
+    const tubularSegments = Math.min(Math.max(pos.length * 3, 300), 3000);
+    const geo = new THREE.TubeGeometry(flyCurve, tubularSegments, tubeR, radSeg, false);
+
+    // Vertex colors by slope, mapped back to original GPX segments
+    const colors: number[] = [];
+    for (let i = 0; i <= tubularSegments; i++) {
+      const t = i / tubularSegments;
+      const origIdx = Math.min(Math.floor(t * (pts.length - 1)), pts.length - 2);
+      const grade = computeGrade(pts[origIdx], pts[origIdx + 1]);
       const color = new THREE.Color(slopeColor(grade));
-      const curve = new THREE.LineCurve3(pos[i], pos[i + 1]);
-      const geo = new THREE.TubeGeometry(curve, 1, tubeR, radSeg, false);
-      const mat = new THREE.MeshPhongMaterial({ color, shininess: 80 });
-      routeGroup.add(new THREE.Mesh(geo, mat));
+      for (let j = 0; j <= radSeg; j++) {
+        colors.push(color.r, color.g, color.b);
+      }
     }
+    geo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+    const mat = new THREE.MeshPhongMaterial({ vertexColors: true, shininess: 80 });
+    routeGroup.add(new THREE.Mesh(geo, mat));
 
     // Ground shadow line
     const shadowPts = pos.map((p) => new THREE.Vector3(p.x, 0.02, p.z));
@@ -245,29 +259,20 @@ export function useThreeScene(
     updateCameraFromOrbit();
   }
 
-  function startFlyMode(): void {
-    if (scenePositions.length < 2) return;
-    stopFlyMode();
-    flyProgress.value = 0;
-    flyStartTime = performance.now();
-    flyStep();
-  }
-
   function flyStep(): void {
     const elapsed = performance.now() - (flyStartTime ?? 0);
     const t = Math.min(elapsed / FLY_DURATION, 1);
     flyProgress.value = t;
 
-    const pos = scenePositions;
-    const rawIdx = t * (pos.length - 2);
-    const idx = Math.floor(rawIdx);
-    const frac = rawIdx - idx;
+    if (flyCurve && camera.value) {
+      // getPointAt = arc-length parameterized → constant speed, no jitter
+      const camPos = flyCurve.getPointAt(t);
+      const lookT = Math.min(t + 0.015, 1);
+      const lookTarget = flyCurve.getPointAt(lookT);
 
-    const camPos = pos[idx].clone().lerp(pos[idx + 1], frac);
-    const lookTarget = pos[Math.min(idx + 3, pos.length - 1)];
-
-    camera.value?.position.set(camPos.x, camPos.y + 4, camPos.z);
-    camera.value?.lookAt(lookTarget.x, lookTarget.y + 4, lookTarget.z);
+      camera.value.position.set(camPos.x, camPos.y + 3, camPos.z);
+      camera.value.lookAt(lookTarget.x, lookTarget.y + 3, lookTarget.z);
+    }
 
     if (t < 1) {
       flyRafId = requestAnimationFrame(flyStep);
@@ -284,6 +289,14 @@ export function useThreeScene(
     }
     flyStartTime = null;
     flyProgress.value = 0;
+  }
+
+  function startFlyMode(): void {
+    if (!flyCurve || scenePositions.length < 2) return;
+    stopFlyMode();
+    flyProgress.value = 0;
+    flyStartTime = performance.now();
+    flyStep();
   }
 
   onMounted(() => {
