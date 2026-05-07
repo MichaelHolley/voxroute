@@ -58,6 +58,10 @@ export function useThreeScene(
   let animId: number | null = null;
   let flyRafId: number | null = null;
   let flyStartTime: number | null = null;
+  let flyLastFrameTime: number | null = null;
+  let flySmoothedPos = new THREE.Vector3();
+  let flySmoothedLook = new THREE.Vector3();
+  let flyInitialized = false;
   let scenePositions: THREE.Vector3[] = [];
   let flyCurve: THREE.CatmullRomCurve3 | null = null;
   const FLY_DURATION = 22000;
@@ -260,18 +264,35 @@ export function useThreeScene(
   }
 
   function flyStep(): void {
-    const elapsed = performance.now() - (flyStartTime ?? 0);
+    const now = performance.now();
+    const elapsed = now - (flyStartTime ?? 0);
+    const dt = flyLastFrameTime !== null ? (now - flyLastFrameTime) / 1000 : 0;
+    flyLastFrameTime = now;
+
     const t = Math.min(elapsed / FLY_DURATION, 1);
     flyProgress.value = t;
 
     if (flyCurve && camera.value) {
-      // getPointAt = arc-length parameterized → constant speed, no jitter
-      const camPos = flyCurve.getPointAt(t);
-      const lookT = Math.min(t + 0.015, 1);
-      const lookTarget = flyCurve.getPointAt(lookT);
+      const targetPos = flyCurve.getPointAt(t);
+      targetPos.y += 3;
 
-      camera.value.position.set(camPos.x, camPos.y + 3, camPos.z);
-      camera.value.lookAt(lookTarget.x, lookTarget.y + 3, lookTarget.z);
+      const lookT = Math.min(t + 0.03, 1);
+      const targetLook = flyCurve.getPointAt(lookT);
+      targetLook.y += 3;
+
+      if (!flyInitialized) {
+        flySmoothedPos.copy(targetPos);
+        flySmoothedLook.copy(targetLook);
+        flyInitialized = true;
+      } else {
+        // Frame-rate independent exponential smoothing (tau ≈ 0.2s)
+        const alpha = 1 - Math.exp(-dt * 5);
+        flySmoothedPos.lerp(targetPos, alpha);
+        flySmoothedLook.lerp(targetLook, alpha);
+      }
+
+      camera.value.position.copy(flySmoothedPos);
+      camera.value.lookAt(flySmoothedLook);
     }
 
     if (t < 1) {
@@ -288,12 +309,14 @@ export function useThreeScene(
       flyRafId = null;
     }
     flyStartTime = null;
+    flyLastFrameTime = null;
     flyProgress.value = 0;
   }
 
   function startFlyMode(): void {
     if (!flyCurve || scenePositions.length < 2) return;
     stopFlyMode();
+    flyInitialized = false;
     flyProgress.value = 0;
     flyStartTime = performance.now();
     flyStep();
