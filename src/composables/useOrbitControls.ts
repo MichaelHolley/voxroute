@@ -28,7 +28,7 @@ export function useOrbitControls(orbitState: OrbitState) {
     orbitState.theta.value -= dx * 0.005;
     orbitState.phi.value = Math.max(
       0.05,
-      Math.min(Math.PI - 0.05, orbitState.phi.value + dy * 0.005),
+      Math.min(Math.PI / 2 - 0.01, orbitState.phi.value + dy * 0.005),
     );
     orbitState.update();
   }
@@ -68,7 +68,7 @@ export function useOrbitControls(orbitState: OrbitState) {
       orbitState.theta.value -= dx * 0.005;
       orbitState.phi.value = Math.max(
         0.05,
-        Math.min(Math.PI - 0.05, orbitState.phi.value + dy * 0.005),
+        Math.min(Math.PI / 2 - 0.01, orbitState.phi.value + dy * 0.005),
       );
       orbitState.update();
     } else if (e.touches.length === 2) {
