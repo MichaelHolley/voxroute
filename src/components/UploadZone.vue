@@ -48,9 +48,10 @@ defineExpose({ setError: (msg: string) => (errorMsg.value = msg) });
 </script>
 
 <template>
-  <div class="upload-page">
-    <div class="upload-header">
-      <div class="logo">
+  <div class="flex flex-col items-center justify-center min-h-screen p-8 gap-6">
+    <!-- Header -->
+    <div class="text-center">
+      <div class="flex items-center justify-center gap-3 mb-2">
         <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
           <path
             d="M4 28 L12 14 L20 20 L28 8 L32 12"
@@ -63,14 +64,22 @@ defineExpose({ setError: (msg: string) => (errorMsg.value = msg) });
           <circle cx="4" cy="28" r="2.5" fill="#22c55e" />
           <circle cx="32" cy="12" r="2.5" fill="#ef4444" />
         </svg>
-        <span class="logo-text">VoxRoute</span>
+        <span
+          class="text-[2rem] font-bold tracking-tight bg-gradient-to-br from-vr-blue to-vr-purple bg-clip-text text-transparent"
+          >VoxRoute</span
+        >
       </div>
-      <p class="tagline">3D GPX Route Visualizer</p>
+      <p class="text-vr-muted text-sm tracking-[0.05em] uppercase m-0">3D GPX Route Visualizer</p>
     </div>
 
+    <!-- Drop zone -->
     <div
-      class="drop-zone"
-      :class="{ dragover: isDragOver }"
+      class="w-full max-w-[440px] border-2 border-dashed rounded-2xl py-12 px-8 text-center cursor-pointer transition-all duration-200 bg-vr-surface relative outline-none"
+      :class="
+        isDragOver
+          ? 'border-vr-blue bg-[#1a2040] scale-[1.01] shadow-[0_0_32px_rgba(55,138,221,0.2)]'
+          : 'border-vr-line hover:border-vr-blue hover:bg-vr-hover focus-visible:border-vr-blue focus-visible:bg-vr-hover'
+      "
       @dragover="onDragOver"
       @dragleave="onDragLeave"
       @drop="onDrop"
@@ -83,10 +92,10 @@ defineExpose({ setError: (msg: string) => (errorMsg.value = msg) });
         ref="fileInputRef"
         type="file"
         accept=".gpx"
-        class="hidden-input"
+        class="absolute inset-0 opacity-0 cursor-pointer w-full h-full pointer-events-none"
         @change="onFileInput"
       />
-      <div class="drop-icon">
+      <div class="mb-4 opacity-85 flex justify-center">
         <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
           <rect
             x="8"
@@ -108,12 +117,18 @@ defineExpose({ setError: (msg: string) => (errorMsg.value = msg) });
           <path d="M16 12 L16 8 L32 8 L32 12" stroke="#378ADD" stroke-width="1.5" opacity="0.5" />
         </svg>
       </div>
-      <p class="drop-title">Drop your GPX file here</p>
-      <p class="drop-sub">or <span class="link-text">browse files</span></p>
-      <p class="drop-hint">.gpx files only</p>
+      <p class="text-lg font-semibold text-vr-text m-0 mb-1">Drop your GPX file here</p>
+      <p class="text-vr-muted text-sm m-0 mb-3">
+        or <span class="text-vr-blue underline">browse files</span>
+      </p>
+      <p class="text-xs text-[#3a4060] m-0">.gpx files only</p>
     </div>
 
-    <div v-if="errorMsg" class="error-banner">
+    <!-- Error banner -->
+    <div
+      v-if="errorMsg"
+      class="flex items-center gap-2 bg-[rgba(239,68,68,0.12)] border border-[rgba(239,68,68,0.3)] text-[#f87171] px-4 py-[0.6rem] rounded-lg text-sm max-w-[440px] w-full"
+    >
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
         <circle cx="8" cy="8" r="7" stroke="#ef4444" stroke-width="1.5" />
         <path
@@ -126,14 +141,25 @@ defineExpose({ setError: (msg: string) => (errorMsg.value = msg) });
       {{ errorMsg }}
     </div>
 
-    <div class="demo-row">
-      <span class="demo-label">No file? </span>
-      <button class="demo-btn" @click.stop="loadDemo">Load Alpine demo route</button>
+    <!-- Demo link -->
+    <div class="text-vr-muted text-sm">
+      <span>No file? </span>
+      <button
+        class="bg-transparent border-0 text-vr-blue cursor-pointer text-sm underline p-0 font-[inherit] hover:text-[#5aa0e8] transition-colors"
+        @click.stop="loadDemo"
+      >
+        Load Alpine demo route
+      </button>
     </div>
 
-    <div class="legend-preview">
-      <span class="legend-item" v-for="item in legend" :key="item.label">
-        <span class="legend-dot" :style="{ background: item.color }"></span>
+    <!-- Legend -->
+    <div class="flex flex-wrap gap-x-5 gap-y-3 justify-center mt-2">
+      <span
+        v-for="item in legend"
+        :key="item.label"
+        class="flex items-center gap-[0.4rem] text-[0.78rem] text-vr-muted"
+      >
+        <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="{ background: item.color }"></span>
         {{ item.label }}
       </span>
     </div>
@@ -148,167 +174,3 @@ const legend = [
   { color: "#7c3aed", label: "> 10% very steep" },
 ];
 </script>
-
-<style scoped>
-.upload-page {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  padding: 2rem;
-  gap: 1.5rem;
-}
-
-.upload-header {
-  text-align: center;
-}
-
-.logo {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  margin-bottom: 0.5rem;
-}
-
-.logo-text {
-  font-size: 2rem;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  background: linear-gradient(135deg, #378add, #7c3aed);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.tagline {
-  color: #6b7a99;
-  font-size: 0.9rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.drop-zone {
-  width: 100%;
-  max-width: 440px;
-  border: 2px dashed #2a2a3a;
-  border-radius: 16px;
-  padding: 3rem 2rem;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  background: #1a1a24;
-  position: relative;
-}
-
-.drop-zone:hover,
-.drop-zone:focus-visible {
-  border-color: #378add;
-  background: #1e2030;
-  outline: none;
-}
-
-.drop-zone.dragover {
-  border-color: #378add;
-  background: #1a2040;
-  transform: scale(1.01);
-  box-shadow: 0 0 32px rgba(55, 138, 221, 0.2);
-}
-
-.hidden-input {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-
-.drop-icon {
-  margin-bottom: 1rem;
-  opacity: 0.85;
-}
-
-.drop-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #e2e8f0;
-  margin: 0 0 0.25rem;
-}
-
-.drop-sub {
-  color: #6b7a99;
-  font-size: 0.9rem;
-  margin: 0 0 0.75rem;
-}
-
-.link-text {
-  color: #378add;
-  text-decoration: underline;
-}
-
-.drop-hint {
-  font-size: 0.75rem;
-  color: #3a4060;
-  margin: 0;
-}
-
-.error-banner {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: rgba(239, 68, 68, 0.12);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #f87171;
-  padding: 0.6rem 1rem;
-  border-radius: 8px;
-  font-size: 0.875rem;
-  max-width: 440px;
-  width: 100%;
-}
-
-.demo-row {
-  color: #6b7a99;
-  font-size: 0.875rem;
-}
-
-.demo-btn {
-  background: none;
-  border: none;
-  color: #378add;
-  cursor: pointer;
-  font-size: 0.875rem;
-  text-decoration: underline;
-  padding: 0;
-  font-family: inherit;
-}
-
-.demo-btn:hover {
-  color: #5aa0e8;
-}
-
-.legend-preview {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem 1.25rem;
-  justify-content: center;
-  margin-top: 0.5rem;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.78rem;
-  color: #6b7a99;
-}
-
-.legend-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-</style>

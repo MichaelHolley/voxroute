@@ -3,6 +3,7 @@ import { ref, watch } from "vue";
 import UploadZone from "./components/UploadZone.vue";
 import RouteCanvas from "./components/RouteCanvas.vue";
 import StatsPanel from "./components/StatsPanel.vue";
+import Spinner from "./components/Spinner.vue";
 import { useGpxParser } from "./composables/useGpxParser.ts";
 
 type View = "upload" | "visualize";
@@ -33,103 +34,33 @@ function onLoadNew() {
 </script>
 
 <template>
-  <div class="app">
-    <Transition name="view" mode="out-in">
-      <div v-if="currentView === 'upload'" key="upload" class="view-upload">
+  <div class="relative w-full min-h-screen bg-vr-bg text-vr-text">
+    <Transition
+      mode="out-in"
+      enter-active-class="transition-[opacity,transform] duration-300 ease-in-out"
+      leave-active-class="transition-[opacity,transform] duration-300 ease-in-out"
+      enter-from-class="opacity-0 translate-y-3"
+      leave-to-class="opacity-0 -translate-y-3"
+    >
+      <div v-if="currentView === 'upload'" key="upload" class="relative">
         <UploadZone ref="uploadZoneRef" @file-loaded="onFileLoaded" @load-demo="onLoadDemo" />
-        <div v-if="loading" class="loading-overlay">
-          <div class="spinner"></div>
+        <div
+          v-if="loading"
+          class="fixed inset-0 flex flex-col items-center justify-center gap-4 text-vr-muted text-sm backdrop-blur-sm z-[100] bg-[rgba(10,10,15,0.85)]"
+        >
+          <Spinner />
           <span>Parsing route…</span>
         </div>
       </div>
 
-      <div v-else key="visualize" class="view-visualize">
-        <div class="canvas-area">
+      <div v-else key="visualize" class="flex flex-col h-screen">
+        <div class="flex-1 min-h-0">
           <RouteCanvas :points="points" @load-new="onLoadNew" />
         </div>
-        <div class="stats-area">
+        <div class="shrink-0 p-3 bg-vr-bg border-t border-vr-line">
           <StatsPanel :stats="stats" />
         </div>
       </div>
     </Transition>
   </div>
 </template>
-
-<style scoped>
-.app {
-  width: 100%;
-  min-height: 100vh;
-  background: #0f0f14;
-  color: #e2e8f0;
-  position: relative;
-}
-
-.view-upload {
-  position: relative;
-}
-
-.view-visualize {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-}
-
-.canvas-area {
-  flex: 1;
-  min-height: 0;
-}
-
-.stats-area {
-  padding: 0.75rem;
-  background: #0f0f14;
-  border-top: 1px solid #1a1a24;
-  flex-shrink: 0;
-}
-
-.view-enter-active,
-.view-leave-active {
-  transition:
-    opacity 0.3s ease,
-    transform 0.3s ease;
-}
-
-.view-enter-from {
-  opacity: 0;
-  transform: translateY(12px);
-}
-
-.view-leave-to {
-  opacity: 0;
-  transform: translateY(-12px);
-}
-
-.loading-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(10, 10, 15, 0.85);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  color: #6b7a99;
-  font-size: 0.9rem;
-  backdrop-filter: blur(4px);
-  z-index: 100;
-}
-
-.spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid #1a1a24;
-  border-top-color: #378add;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-</style>

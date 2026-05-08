@@ -1,30 +1,43 @@
-:root {
-  --sans: "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
-  font-family: var(--sans);
-  font-size: 16px;
-  line-height: 1.5;
-  color-scheme: dark;
-  color: #e2e8f0;
-  background: #0f0f14;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
+
+  --color-vr-bg: #0f0f14;
+  --color-vr-deep: #0a0a0f;
+  --color-vr-surface: #1a1a24;
+  --color-vr-hover: #1e2030;
+  --color-vr-line: #2a2a3a;
+  --color-vr-line-hi: #3a3a5a;
+  --color-vr-text: #e2e8f0;
+  --color-vr-muted: #6b7a99;
+  --color-vr-faint: #4a5570;
+  --color-vr-dim: #8090b0;
+  --color-vr-soft: #a0aec0;
+  --color-vr-blue: #378add;
+  --color-vr-purple: #7c3aed;
+  --color-vr-green: #22c55e;
+  --color-vr-red: #ef4444;
+  --color-vr-yellow: #eab308;
 }
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
+@layer base {
+  :root {
+    color-scheme: dark;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 
-body {
-  margin: 0;
-  background: #0f0f14;
-  overflow: hidden;
-}
+  body {
+    margin: 0;
+    background: var(--color-vr-bg);
+    overflow: hidden;
+  }
 
-#app {
-  width: 100%;
-  height: 100vh;
+  #app {
+    width: 100%;
+    height: 100vh;
+  }
 }

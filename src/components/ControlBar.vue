@@ -36,28 +36,30 @@ const modes: { id: CameraMode; label: string; icon: string }[] = [
 </script>
 
 <template>
-  <div class="control-bar">
-    <div class="mode-group">
+  <div class="flex items-center gap-2 bg-vr-surface border border-vr-line rounded-[10px] p-1.5">
+    <div class="flex gap-1">
       <button
         v-for="m in modes"
         :key="m.id"
-        class="mode-btn"
-        :class="{ active: activeMode === m.id && !isFlying }"
-        @click="emit('set-mode', m.id)"
+        class="flex items-center gap-1.5 px-3 py-[0.45rem] rounded-[7px] border border-transparent bg-transparent text-vr-muted text-[0.8rem] font-[inherit] cursor-pointer transition-all duration-150 whitespace-nowrap hover:bg-vr-hover hover:text-vr-soft"
+        :class="
+          activeMode === m.id && !isFlying ? 'bg-vr-blue/15 !border-vr-blue/40 text-vr-blue' : ''
+        "
         :title="m.label"
+        @click="emit('set-mode', m.id)"
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" v-html="m.icon"></svg>
-        <span>{{ m.label }}</span>
+        <span class="max-[480px]:hidden">{{ m.label }}</span>
       </button>
     </div>
 
-    <div class="divider"></div>
+    <div class="w-px h-6 bg-vr-line shrink-0"></div>
 
     <button
-      class="fly-btn"
-      :class="{ active: isFlying }"
-      @click="emit('toggle-fly')"
+      class="flex items-center gap-1.5 px-3 py-[0.45rem] rounded-[7px] border border-transparent bg-transparent text-vr-muted text-[0.8rem] font-[inherit] cursor-pointer transition-all duration-150 whitespace-nowrap hover:bg-vr-hover hover:text-vr-soft"
+      :class="isFlying ? 'bg-vr-red/15 !border-vr-red/40 text-vr-red' : ''"
       :title="isFlying ? 'Stop fly-through' : 'Start fly-through'"
+      @click="emit('toggle-fly')"
     >
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
         <path v-if="!isFlying" d="M5 4 L19 12 L5 20 Z" fill="currentColor" />
@@ -66,84 +68,10 @@ const modes: { id: CameraMode; label: string; icon: string }[] = [
           <rect x="14" y="5" width="4" height="14" rx="1" fill="currentColor" />
         </g>
       </svg>
-      <span>{{ isFlying ? "Stop" : "Fly-through" }}</span>
-      <span v-if="isFlying" class="fly-pct">{{ Math.round(flyProgress * 100) }}%</span>
+      <span class="max-[480px]:hidden">{{ isFlying ? "Stop" : "Fly-through" }}</span>
+      <span v-if="isFlying" class="tabular-nums text-[0.7rem] opacity-80">
+        {{ Math.round(flyProgress * 100) }}%
+      </span>
     </button>
   </div>
 </template>
-
-<style scoped>
-.control-bar {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: #1a1a24;
-  border: 1px solid #2a2a3a;
-  border-radius: 10px;
-  padding: 0.4rem;
-}
-
-.mode-group {
-  display: flex;
-  gap: 0.25rem;
-}
-
-.mode-btn,
-.fly-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.45rem 0.75rem;
-  border-radius: 7px;
-  border: 1px solid transparent;
-  background: transparent;
-  color: #6b7a99;
-  font-size: 0.8rem;
-  font-family: inherit;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  white-space: nowrap;
-}
-
-.mode-btn:hover,
-.fly-btn:hover {
-  background: #1e2030;
-  color: #a0aec0;
-}
-
-.mode-btn.active {
-  background: rgba(55, 138, 221, 0.15);
-  border-color: rgba(55, 138, 221, 0.4);
-  color: #378add;
-}
-
-.fly-btn.active {
-  background: rgba(239, 68, 68, 0.15);
-  border-color: rgba(239, 68, 68, 0.4);
-  color: #ef4444;
-}
-
-.fly-pct {
-  font-variant-numeric: tabular-nums;
-  font-size: 0.7rem;
-  opacity: 0.8;
-}
-
-.divider {
-  width: 1px;
-  height: 24px;
-  background: #2a2a3a;
-  flex-shrink: 0;
-}
-
-@media (max-width: 480px) {
-  .mode-btn span,
-  .fly-btn span:first-of-type {
-    display: none;
-  }
-  .control-bar {
-    gap: 0.25rem;
-    padding: 0.3rem;
-  }
-}
-</style>

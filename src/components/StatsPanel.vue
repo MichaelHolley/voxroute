@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from "vue";
+import { ref, watch, onMounted, computed } from "vue";
 
 interface Stats {
   distance: number;
@@ -49,166 +49,63 @@ watch(
 function fmt(n: number, decimals = 0) {
   return n.toFixed(decimals);
 }
+
+const statCards = computed(() => [
+  {
+    label: "Distance",
+    value: fmt(displayed.value.distance / 1000, 2),
+    unit: "km",
+    icon: `<path d="M2 10 Q6 4 10 10 Q14 16 18 10" stroke="#378ADD" stroke-width="1.8" fill="none" stroke-linecap="round"/>`,
+  },
+  {
+    label: "Elev. Gain",
+    value: fmt(displayed.value.elevationGain),
+    unit: "m",
+    icon: `<path d="M4 16 L10 4 L16 16" stroke="#22c55e" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`,
+  },
+  {
+    label: "Max Elev.",
+    value: fmt(displayed.value.maxEle),
+    unit: "m",
+    icon: `<path d="M2 14 L8 6 L14 10 L18 4" stroke="#eab308" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`,
+  },
+  {
+    label: "Min Elev.",
+    value: fmt(displayed.value.minEle),
+    unit: "m",
+    icon: `<path d="M2 6 L8 14 L14 10 L18 16" stroke="#ef4444" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`,
+  },
+  {
+    label: "Track Points",
+    value: String(displayed.value.pointCount),
+    unit: "pts",
+    icon: `<circle cx="10" cy="10" r="2" fill="#7c3aed"/><circle cx="4" cy="6" r="1.5" fill="#7c3aed" opacity="0.6"/><circle cx="16" cy="14" r="1.5" fill="#7c3aed" opacity="0.6"/><circle cx="4" cy="14" r="1.5" fill="#7c3aed" opacity="0.4"/><circle cx="16" cy="6" r="1.5" fill="#7c3aed" opacity="0.4"/>`,
+  },
+]);
 </script>
 
 <template>
-  <div class="stats-panel">
-    <div class="stats-title">Route Statistics</div>
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-icon">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path
-              d="M2 10 Q6 4 10 10 Q14 16 18 10"
-              stroke="#378ADD"
-              stroke-width="1.8"
-              fill="none"
-              stroke-linecap="round"
-            />
-          </svg>
+  <div class="bg-vr-surface border border-vr-line rounded-xl p-4">
+    <div class="text-[0.7rem] font-semibold tracking-[0.08em] uppercase text-vr-faint mb-3">
+      Route Statistics
+    </div>
+    <div class="grid grid-cols-5 gap-2 max-[600px]:grid-cols-3">
+      <div
+        v-for="card in statCards"
+        :key="card.label"
+        class="bg-vr-deep border border-[#1e1e2a] rounded-lg py-3 px-2 text-center transition-colors hover:border-[#2a2a4a]"
+      >
+        <div class="flex justify-center mb-1.5">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" v-html="card.icon"></svg>
         </div>
-        <div class="stat-value">
-          {{ fmt(displayed.distance / 1000, 2) }}<span class="unit">km</span>
+        <div class="text-[1.15rem] font-bold text-vr-text leading-tight tabular-nums">
+          {{ card.value
+          }}<span class="text-[0.65rem] font-normal text-vr-faint ml-0.5">{{ card.unit }}</span>
         </div>
-        <div class="stat-label">Distance</div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-icon">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path
-              d="M4 16 L10 4 L16 16"
-              stroke="#22c55e"
-              stroke-width="1.8"
-              fill="none"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
+        <div class="text-[0.65rem] text-vr-faint mt-1 uppercase tracking-[0.05em]">
+          {{ card.label }}
         </div>
-        <div class="stat-value">{{ fmt(displayed.elevationGain) }}<span class="unit">m</span></div>
-        <div class="stat-label">Elev. Gain</div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-icon">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path
-              d="M2 14 L8 6 L14 10 L18 4"
-              stroke="#eab308"
-              stroke-width="1.8"
-              fill="none"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </div>
-        <div class="stat-value">{{ fmt(displayed.maxEle) }}<span class="unit">m</span></div>
-        <div class="stat-label">Max Elev.</div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-icon">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path
-              d="M2 6 L8 14 L14 10 L18 16"
-              stroke="#ef4444"
-              stroke-width="1.8"
-              fill="none"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </div>
-        <div class="stat-value">{{ fmt(displayed.minEle) }}<span class="unit">m</span></div>
-        <div class="stat-label">Min Elev.</div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-icon">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <circle cx="10" cy="10" r="2" fill="#7c3aed" />
-            <circle cx="4" cy="6" r="1.5" fill="#7c3aed" opacity="0.6" />
-            <circle cx="16" cy="14" r="1.5" fill="#7c3aed" opacity="0.6" />
-            <circle cx="4" cy="14" r="1.5" fill="#7c3aed" opacity="0.4" />
-            <circle cx="16" cy="6" r="1.5" fill="#7c3aed" opacity="0.4" />
-          </svg>
-        </div>
-        <div class="stat-value">{{ displayed.pointCount }}<span class="unit">pts</span></div>
-        <div class="stat-label">Track Points</div>
       </div>
     </div>
   </div>
 </template>
-
-<style scoped>
-.stats-panel {
-  background: #1a1a24;
-  border: 1px solid #2a2a3a;
-  border-radius: 12px;
-  padding: 1rem;
-}
-
-.stats-title {
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #4a5570;
-  margin-bottom: 0.75rem;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 0.5rem;
-}
-
-@media (max-width: 600px) {
-  .stats-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-.stat-card {
-  background: #0f0f14;
-  border: 1px solid #1e1e2a;
-  border-radius: 8px;
-  padding: 0.75rem 0.5rem;
-  text-align: center;
-  transition: border-color 0.2s;
-}
-
-.stat-card:hover {
-  border-color: #2a2a4a;
-}
-
-.stat-icon {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 0.4rem;
-}
-
-.stat-value {
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: #e2e8f0;
-  line-height: 1.2;
-  font-variant-numeric: tabular-nums;
-}
-
-.unit {
-  font-size: 0.65rem;
-  font-weight: 400;
-  color: #4a5570;
-  margin-left: 2px;
-}
-
-.stat-label {
-  font-size: 0.65rem;
-  color: #4a5570;
-  margin-top: 0.25rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-</style>

@@ -59,7 +59,6 @@ function toggleFly() {
   }
 }
 
-// Stop fly mode when it finishes
 watch(flyProgress, (v) => {
   if (v >= 1 && isFlying.value) {
     isFlying.value = false;
@@ -69,19 +68,21 @@ watch(flyProgress, (v) => {
 </script>
 
 <template>
-  <div class="canvas-wrapper">
-    <canvas ref="canvasRef" class="route-canvas"></canvas>
+  <div class="relative w-full h-full bg-vr-deep overflow-hidden">
+    <canvas ref="canvasRef" class="block w-full h-full"></canvas>
 
-    <!-- Color legend -->
-    <div class="legend">
-      <div v-for="stop in SLOPE_STOPS" :key="stop.label" class="legend-row">
-        <span class="legend-swatch" :style="{ background: stop.color }"></span>
-        <span class="legend-text">{{ stop.label }}</span>
+    <!-- Color legend — bottom left above slider -->
+    <div
+      class="absolute bottom-[52px] left-4 bg-[rgba(15,15,20,0.85)] border border-vr-line rounded-lg px-3 py-2.5 backdrop-blur-[8px] flex flex-col gap-[0.35rem]"
+    >
+      <div v-for="stop in SLOPE_STOPS" :key="stop.label" class="flex items-center gap-[0.45rem]">
+        <span class="w-2.5 h-2.5 rounded-[2px] shrink-0" :style="{ background: stop.color }"></span>
+        <span class="text-[0.7rem] text-vr-dim whitespace-nowrap">{{ stop.label }}</span>
       </div>
     </div>
 
-    <!-- Top-right controls overlay -->
-    <div class="overlay-controls">
+    <!-- Camera controls — top right -->
+    <div class="absolute top-4 right-4">
       <ControlBar
         :active-mode="cameraMode"
         :is-flying="isFlying"
@@ -91,9 +92,13 @@ watch(flyProgress, (v) => {
       />
     </div>
 
-    <!-- Reset + Load new buttons -->
-    <div class="overlay-actions">
-      <button class="action-btn" @click="setMode('free')" title="Reset camera">
+    <!-- Reset + Load new — top left -->
+    <div class="absolute top-4 left-4 flex gap-2">
+      <button
+        class="flex items-center gap-[0.35rem] px-3 py-[0.45rem] rounded-[7px] border border-vr-line bg-[rgba(15,15,20,0.85)] text-vr-dim text-[0.78rem] font-[inherit] cursor-pointer backdrop-blur-[8px] transition-all duration-150 hover:bg-[rgba(30,32,48,0.9)] hover:text-vr-soft hover:border-vr-line-hi"
+        title="Reset camera"
+        @click="setMode('free')"
+      >
         <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
           <path
             d="M3 10 A7 7 0 1 1 10 17"
@@ -111,7 +116,10 @@ watch(flyProgress, (v) => {
         </svg>
         Reset
       </button>
-      <button class="action-btn accent" @click="emit('load-new')">
+      <button
+        class="flex items-center gap-[0.35rem] px-3 py-[0.45rem] rounded-[7px] border border-vr-blue/30 bg-[rgba(15,15,20,0.85)] text-vr-blue text-[0.78rem] font-[inherit] cursor-pointer backdrop-blur-[8px] transition-all duration-150 hover:bg-vr-blue/12 hover:border-vr-blue/50"
+        @click="emit('load-new')"
+      >
         <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
           <path
             d="M10 4 L10 16 M4 10 L16 10"
@@ -124,9 +132,13 @@ watch(flyProgress, (v) => {
       </button>
     </div>
 
-    <!-- Exaggeration slider -->
-    <div class="exaggeration-panel">
-      <label class="exag-label">Elev. ×{{ exaggeration }}</label>
+    <!-- Elevation exaggeration — bottom left -->
+    <div
+      class="absolute bottom-4 left-4 flex items-center gap-2.5 bg-[rgba(15,15,20,0.85)] border border-vr-line rounded-lg px-3 py-[0.45rem] backdrop-blur-[8px]"
+    >
+      <label class="text-[0.72rem] text-vr-muted whitespace-nowrap min-w-[52px] tabular-nums">
+        Elev. ×{{ exaggeration }}
+      </label>
       <input
         v-model.number="exaggeration"
         type="range"
@@ -138,133 +150,20 @@ watch(flyProgress, (v) => {
       />
     </div>
 
-    <!-- Fly progress bar -->
-    <div class="fly-bar" :class="{ visible: isFlying }">
-      <div class="fly-bar-fill" :style="{ width: `${flyProgress * 100}%` }"></div>
+    <!-- Fly progress bar — bottom edge -->
+    <div
+      class="absolute bottom-0 left-0 right-0 h-[3px] bg-vr-blue/15 transition-opacity duration-300"
+      :class="isFlying ? 'opacity-100' : 'opacity-0'"
+    >
+      <div
+        class="h-full bg-gradient-to-r from-vr-blue to-vr-purple transition-[width] duration-100"
+        :style="{ width: `${flyProgress * 100}%` }"
+      ></div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.canvas-wrapper {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  background: #0a0a0f;
-  overflow: hidden;
-}
-
-.route-canvas {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-
-/* Color legend — bottom left */
-.legend {
-  position: absolute;
-  bottom: 52px;
-  left: 16px;
-  background: rgba(15, 15, 20, 0.85);
-  border: 1px solid #2a2a3a;
-  border-radius: 8px;
-  padding: 0.6rem 0.8rem;
-  backdrop-filter: blur(8px);
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.legend-row {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-}
-
-.legend-swatch {
-  width: 10px;
-  height: 10px;
-  border-radius: 2px;
-  flex-shrink: 0;
-}
-
-.legend-text {
-  font-size: 0.7rem;
-  color: #8090b0;
-  white-space: nowrap;
-}
-
-/* Camera controls — top right */
-.overlay-controls {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-}
-
-/* Reset + Load new — top left */
-.overlay-actions {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  display: flex;
-  gap: 0.5rem;
-}
-
-.action-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.45rem 0.75rem;
-  border-radius: 7px;
-  border: 1px solid #2a2a3a;
-  background: rgba(15, 15, 20, 0.85);
-  color: #8090b0;
-  font-size: 0.78rem;
-  font-family: inherit;
-  cursor: pointer;
-  backdrop-filter: blur(8px);
-  transition: all 0.15s ease;
-}
-
-.action-btn:hover {
-  background: rgba(30, 32, 48, 0.9);
-  color: #a0aec0;
-  border-color: #3a3a5a;
-}
-
-.action-btn.accent {
-  color: #378add;
-  border-color: rgba(55, 138, 221, 0.3);
-}
-
-.action-btn.accent:hover {
-  background: rgba(55, 138, 221, 0.12);
-  border-color: rgba(55, 138, 221, 0.5);
-}
-
-/* Elevation exaggeration slider — bottom left */
-.exaggeration-panel {
-  position: absolute;
-  bottom: 16px;
-  left: 16px;
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  background: rgba(15, 15, 20, 0.85);
-  border: 1px solid #2a2a3a;
-  border-radius: 8px;
-  padding: 0.45rem 0.75rem;
-  backdrop-filter: blur(8px);
-}
-
-.exag-label {
-  font-size: 0.72rem;
-  color: #6b7a99;
-  white-space: nowrap;
-  min-width: 52px;
-  font-variant-numeric: tabular-nums;
-}
-
 .exag-slider {
   -webkit-appearance: none;
   appearance: none;
@@ -288,27 +187,5 @@ watch(flyProgress, (v) => {
 
 .exag-slider::-webkit-slider-thumb:hover {
   transform: scale(1.2);
-}
-
-/* Fly progress bar — bottom edge */
-.fly-bar {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: rgba(55, 138, 221, 0.15);
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-
-.fly-bar.visible {
-  opacity: 1;
-}
-
-.fly-bar-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #378add, #7c3aed);
-  transition: width 0.1s linear;
 }
 </style>
