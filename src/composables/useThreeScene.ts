@@ -263,7 +263,30 @@ export function useThreeScene(
     stopFlyMode();
     orbitTheta.value = 0;
     orbitPhi.value = 0.05;
-    orbitRadius.value = 160;
+
+    if (scenePositions.length > 0) {
+      let minX = Infinity,
+        maxX = -Infinity,
+        minZ = Infinity,
+        maxZ = -Infinity;
+      for (const p of scenePositions) {
+        minX = Math.min(minX, p.x);
+        maxX = Math.max(maxX, p.x);
+        minZ = Math.min(minZ, p.z);
+        maxZ = Math.max(maxZ, p.z);
+      }
+      const fovV = (55 * Math.PI) / 180;
+      const aspect = canvasRef.value
+        ? canvasRef.value.clientWidth / canvasRef.value.clientHeight
+        : 1.6;
+      const fovH = 2 * Math.atan(Math.tan(fovV / 2) * aspect);
+      const rZ = ((maxZ - minZ) * 1.3) / (2 * Math.tan(fovV / 2));
+      const rX = ((maxX - minX) * 1.3) / (2 * Math.tan(fovH / 2));
+      orbitRadius.value = Math.max(rZ, rX);
+    } else {
+      orbitRadius.value = 160;
+    }
+
     updateCameraFromOrbit();
   }
 
