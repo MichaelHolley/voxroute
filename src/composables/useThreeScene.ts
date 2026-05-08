@@ -23,6 +23,18 @@ function computeGrade(p1: GpxPoint, p2: GpxPoint): number {
   return ((p2.ele - p1.ele) / dist) * 100;
 }
 
+function smoothPositions(pts: THREE.Vector3[], passes: number): THREE.Vector3[] {
+  let out = pts.map((p) => p.clone());
+  for (let pass = 0; pass < passes; pass++) {
+    const next = out.map((p) => p.clone());
+    for (let i = 1; i < out.length - 1; i++) {
+      next[i].lerpVectors(out[i - 1], out[i + 1], 0.5).lerp(out[i], 0.5);
+    }
+    out = next;
+  }
+  return out;
+}
+
 function projectToScene(points: GpxPoint[], exaggeration: number): THREE.Vector3[] {
   if (points.length === 0) return [];
   const centerLat = points.reduce((s, p) => s + p.lat, 0) / points.length;
@@ -105,7 +117,7 @@ export function useThreeScene(
     const pts = points.value;
     if (pts.length < 2) return;
 
-    scenePositions = projectToScene(pts, exaggeration.value);
+    scenePositions = smoothPositions(projectToScene(pts, exaggeration.value), 2);
     const pos = scenePositions;
 
     // Update orbit target to route centroid
@@ -116,14 +128,14 @@ export function useThreeScene(
     updateCameraFromOrbit();
 
     routeGroup = new THREE.Group();
-    const tubeR = 0.22;
-    const radSeg = 6;
+    const tubeR = 0.12;
+    const radSeg = 10;
 
-    // One smooth curve — no segment joints/rings, arc-length parameterized for fly
-    flyCurve = new THREE.CatmullRomCurve3(pos);
+    // centripetal avoids kinks/cusps at sharp geographic corners
+    flyCurve = new THREE.CatmullRomCurve3(pos, false, "centripetal");
     flyCurve.getLength(); // pre-compute arc-length LUT
 
-    const tubularSegments = Math.min(Math.max(pos.length * 3, 300), 3000);
+    const tubularSegments = Math.min(Math.max(pos.length * 8, 600), 6000);
     const geo = new THREE.TubeGeometry(flyCurve, tubularSegments, tubeR, radSeg, false);
 
     // Vertex colors by slope, mapped back to original GPX segments
@@ -166,7 +178,7 @@ export function useThreeScene(
     }
 
     // Start sphere
-    const startGeo = new THREE.SphereGeometry(1.4, 16, 16);
+    const startGeo = new THREE.SphereGeometry(0.5, 16, 16);
     const startMat = new THREE.MeshPhongMaterial({
       color: 0x22c55e,
       emissive: 0x22c55e,
@@ -177,7 +189,7 @@ export function useThreeScene(
     routeGroup.add(startSphere);
 
     // End sphere
-    const endGeo = new THREE.SphereGeometry(1.4, 16, 16);
+    const endGeo = new THREE.SphereGeometry(0.5, 16, 16);
     const endMat = new THREE.MeshPhongMaterial({
       color: 0xef4444,
       emissive: 0xef4444,
@@ -274,11 +286,11 @@ export function useThreeScene(
 
     if (flyCurve && camera.value) {
       const targetPos = flyCurve.getPointAt(t);
-      targetPos.y += 3;
+      targetPos.y += 0.6;
 
       const lookT = Math.min(t + 0.03, 1);
       const targetLook = flyCurve.getPointAt(lookT);
-      targetLook.y += 3;
+      targetLook.y += 0.6;
 
       if (!flyInitialized) {
         flySmoothedPos.copy(targetPos);
