@@ -15,20 +15,8 @@ export interface RouteStats {
   pointCount: number;
 }
 
-function buildDemoGpx(): string {
-  const pts: string[] = [];
-  for (let i = 0; i < 40; i++) {
-    const t = i / 39;
-    const climbT = i < 20 ? i / 19 : (39 - i) / 19;
-    const ele = 750 + climbT * 660;
-    const lat = 47.8 + t * 0.045 + Math.sin(i * 0.8) * 0.003;
-    const lon = 10.9 + t * 0.1 + Math.cos(i * 0.6) * 0.004;
-    pts.push(
-      `<trkpt lat="${lat.toFixed(6)}" lon="${lon.toFixed(6)}"><ele>${ele.toFixed(1)}</ele></trkpt>`,
-    );
-  }
-  return `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1" creator="voxroute"><trk><name>Alpine Demo</name><trkseg>${pts.join("")}</trkseg></trk></gpx>`;
-}
+const DEMO_GPX_URL =
+  "https://raw.githubusercontent.com/gps-touring/sample-gpx/refs/heads/master/BrittanyJura/JuraRoute72011.gpx";
 
 function parseGpx(xmlString: string): GpxPoint[] {
   const parser = new DOMParser();
@@ -92,14 +80,23 @@ export function useGpxParser() {
     }
   }
 
-  function loadDemo(): void {
+  async function loadDemo(): Promise<void> {
     error.value = null;
-    loadXml(buildDemoGpx());
+    loading.value = true;
+    try {
+      const res = await fetch(DEMO_GPX_URL);
+      if (!res.ok) throw new Error(`Failed to fetch demo route (${res.status})`);
+      loadXml(await res.text());
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : "Failed to load demo route";
+      loading.value = false;
+    }
   }
 
   function reset(): void {
     points.value = [];
     error.value = null;
+    loading.value = false;
   }
 
   return { points, stats, error, loading, loadFile, loadXml, loadDemo, reset };
