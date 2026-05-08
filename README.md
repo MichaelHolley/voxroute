@@ -1,5 +1,33 @@
-# Vue 3 + TypeScript + Vite
+# VoxRoute
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+3D GPX route visualizer. Upload a `.gpx` file and fly through your route rendered as a gradient-colored elevation tube in a Three.js scene.
 
-Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
+## Features
+
+- Drag-and-drop or click to upload `.gpx` files
+- 3D CatmullRom tube with elevation-based color gradient
+- Smooth fly-through camera animation with exponential damping
+- Stats panel: distance, elevation gain/loss, duration
+- Demo route included — no file needed to try it
+
+## Stack
+
+- **Vue 3** + TypeScript (Composition API, `<script setup>`)
+- **Three.js** for 3D rendering
+- **Vite+** (`vp`) for dev, build, lint, type-check
+
+## Getting Started
+
+```bash
+pnpm install   # or: vp install
+vp dev
+```
+
+## Scripts
+
+| Command      | What it does             |
+| ------------ | ------------------------ |
+| `vp dev`     | Dev server               |
+| `vp build`   | Type-check + bundle      |
+| `vp preview` | Preview production build |
+| `vp check`   | Format, lint, type-check |
