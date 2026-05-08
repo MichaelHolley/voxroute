@@ -14,6 +14,7 @@
 
 - **Vue 3** + TypeScript (Composition API, `<script setup>`)
 - **Three.js** for 3D rendering
+- **Tailwind CSS v4** via `@tailwindcss/vite`
 - **Vite+** (`vp`) for dev, build, lint, type-check
 
 ## Getting Started
