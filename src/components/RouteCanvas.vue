@@ -136,8 +136,8 @@ watch(flyProgress, (v) => {
     <div
       class="absolute bottom-4 left-4 flex items-center gap-2.5 bg-[rgba(15,15,20,0.85)] border border-vr-line rounded-lg px-3 py-[0.45rem] backdrop-blur-[8px]"
     >
-      <label class="text-[0.72rem] text-vr-muted whitespace-nowrap min-w-[52px] tabular-nums">
-        Elev. ×{{ exaggeration }}
+      <label class="text-[0.72rem] text-vr-muted whitespace-nowrap w-[76px] tabular-nums">
+        Elev. ×{{ Number(exaggeration).toFixed(1) }}
       </label>
       <input
         v-model.number="exaggeration"
