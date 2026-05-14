@@ -41,6 +41,7 @@ function setMode(mode: CameraMode) {
   cameraMode.value = mode;
   stopFlyMode();
   isFlying.value = false;
+  orbitControls.setEnabled(true);
   if (mode === "free") resetView();
   else if (mode === "top") setTopView();
   else if (mode === "side") setSideView();
