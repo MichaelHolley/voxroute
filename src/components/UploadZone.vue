@@ -148,7 +148,7 @@ defineExpose({ setError: (msg: string) => (errorMsg.value = msg) });
         class="bg-transparent border-0 text-vr-blue cursor-pointer text-sm underline p-0 font-[inherit] hover:text-[#5aa0e8] transition-colors"
         @click.stop="loadDemo"
       >
-        Load Alpine demo route
+        Load demo route
       </button>
     </div>
 

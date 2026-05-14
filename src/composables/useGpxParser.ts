@@ -16,7 +16,7 @@ export interface RouteStats {
 }
 
 const DEMO_GPX_URL =
-  "https://raw.githubusercontent.com/gps-touring/sample-gpx/refs/heads/master/BrittanyJura/JuraRoute72011.gpx";
+  "https://raw.githubusercontent.com/gps-touring/sample-gpx/refs/heads/master/BrittanyJura/Salins-les-Bains_Fleurier.gpx";
 
 function parseGpx(xmlString: string): GpxPoint[] {
   const parser = new DOMParser();
