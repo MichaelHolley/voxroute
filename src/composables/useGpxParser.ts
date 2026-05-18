@@ -16,7 +16,7 @@ export interface RouteStats {
 }
 
 const DEMO_GPX_URL =
-  "https://raw.githubusercontent.com/gps-touring/sample-gpx/refs/heads/master/BrittanyJura/Salins-les-Bains_Fleurier.gpx";
+  "https://raw.githubusercontent.com/gps-touring/sample-gpx/refs/heads/master/BrittanyJura/VoieVerteHauteVosges.gpx";
 
 function parseGpx(xmlString: string): GpxPoint[] {
   const parser = new DOMParser();
@@ -39,7 +39,13 @@ export function useGpxParser() {
   const stats = computed<RouteStats>(() => {
     const pts = points.value;
     if (pts.length < 2) {
-      return { distance: 0, elevationGain: 0, maxEle: 0, minEle: 0, pointCount: pts.length };
+      return {
+        distance: 0,
+        elevationGain: 0,
+        maxEle: 0,
+        minEle: 0,
+        pointCount: pts.length,
+      };
     }
     let distance = 0;
     let elevationGain = 0;

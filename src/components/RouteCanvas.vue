@@ -28,8 +28,17 @@ const isFlying = ref(false);
 
 const pointsRef = computed(() => props.points);
 
-const { orbitState, flyProgress, resetView, setTopView, setSideView, startFlyMode, stopFlyMode } =
-  useThreeScene(canvasRef, pointsRef, exaggeration);
+const {
+  orbitState,
+  flyProgress,
+  terrainVisible,
+  terrainLoading,
+  resetView,
+  setTopView,
+  setSideView,
+  startFlyMode,
+  stopFlyMode,
+} = useThreeScene(canvasRef, pointsRef, exaggeration);
 
 const orbitControls = useOrbitControls(orbitState);
 
@@ -116,6 +125,43 @@ watch(flyProgress, (v) => {
           />
         </svg>
         Reset
+      </button>
+      <button
+        class="flex items-center gap-[0.35rem] px-3 py-[0.45rem] rounded-[7px] border bg-[rgba(15,15,20,0.85)] text-[0.78rem] font-[inherit] cursor-pointer backdrop-blur-[8px] transition-all duration-150"
+        :class="
+          terrainVisible
+            ? 'border-vr-line-hi text-vr-soft hover:bg-[rgba(30,32,48,0.9)]'
+            : 'border-vr-line text-vr-muted hover:text-vr-soft hover:border-vr-line-hi'
+        "
+        :title="terrainVisible ? 'Hide terrain contours' : 'Show terrain contours'"
+        @click="terrainVisible = !terrainVisible"
+      >
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+          <path
+            d="M2 14 Q5 9 8 11 T14 9 T18 12"
+            stroke="currentColor"
+            stroke-width="1.4"
+            stroke-linecap="round"
+            fill="none"
+          />
+          <path
+            d="M2 17 Q6 13 10 14 T18 15"
+            stroke="currentColor"
+            stroke-width="1.4"
+            stroke-linecap="round"
+            opacity="0.6"
+            fill="none"
+          />
+          <path
+            d="M4 10 Q7 6 10 8 T16 7"
+            stroke="currentColor"
+            stroke-width="1.4"
+            stroke-linecap="round"
+            opacity="0.4"
+            fill="none"
+          />
+        </svg>
+        <span class="tabular-nums">{{ terrainLoading ? "…" : "Topo" }}</span>
       </button>
       <button
         class="flex items-center gap-[0.35rem] px-3 py-[0.45rem] rounded-[7px] border border-vr-blue/30 bg-[rgba(15,15,20,0.85)] text-vr-blue text-[0.78rem] font-[inherit] cursor-pointer backdrop-blur-[8px] transition-all duration-150 hover:bg-vr-blue/12 hover:border-vr-blue/50"

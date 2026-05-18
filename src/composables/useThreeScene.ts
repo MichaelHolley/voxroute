@@ -7,6 +7,8 @@ type DisposableObj = {
 };
 import { haversineDistance } from "../utils/haversine.ts";
 import { slopeColor } from "../utils/gradientColor.ts";
+import { projectPoints } from "../utils/projection.ts";
+import { buildTerrainContours } from "./useTerrain.ts";
 import type { GpxPoint } from "./useGpxParser.ts";
 
 export interface OrbitState {
@@ -35,23 +37,6 @@ function smoothPositions(pts: THREE.Vector3[], passes: number): THREE.Vector3[] 
   return out;
 }
 
-function projectToScene(points: GpxPoint[], exaggeration: number): THREE.Vector3[] {
-  if (points.length === 0) return [];
-  const centerLat = points.reduce((s, p) => s + p.lat, 0) / points.length;
-  const centerLon = points.reduce((s, p) => s + p.lon, 0) / points.length;
-  const minEle = Math.min(...points.map((p) => p.ele));
-  const mPerDegLat = 111000;
-  const mPerDegLon = 111000 * Math.cos((centerLat * Math.PI) / 180);
-  const raw = points.map((p) => ({
-    x: (p.lon - centerLon) * mPerDegLon,
-    z: -(p.lat - centerLat) * mPerDegLat,
-    y: p.ele - minEle,
-  }));
-  const maxH = Math.max(...raw.map((p) => Math.sqrt(p.x ** 2 + p.z ** 2)));
-  const scale = maxH > 0 ? 50 / maxH : 1;
-  return raw.map((p) => new THREE.Vector3(p.x * scale, p.y * scale * exaggeration, p.z * scale));
-}
-
 export function useThreeScene(
   canvasRef: Ref<HTMLCanvasElement | null>,
   points: Ref<GpxPoint[]> | ComputedRef<GpxPoint[]>,
@@ -63,10 +48,16 @@ export function useThreeScene(
   const orbitPhi = ref((Math.PI * 5) / 12);
   const orbitRadius = ref(130);
   const orbitTarget = ref(new THREE.Vector3(0, 0, 0));
+  const terrainVisible = ref(false);
+  const terrainLoading = ref(false);
 
   let renderer: THREE.WebGLRenderer | null = null;
   let scene: THREE.Scene | null = null;
   let routeGroup: THREE.Group | null = null;
+  let terrainGroup: THREE.Group | null = null;
+  let terrainAbort: AbortController | null = null;
+  let lastProjection: ReturnType<typeof projectPoints>["projection"] = null;
+  let lastPts: GpxPoint[] = [];
   let animId: number | null = null;
   let flyRafId: number | null = null;
   let flyStartTime: number | null = null;
@@ -117,8 +108,16 @@ export function useThreeScene(
     const pts = points.value;
     if (pts.length < 2) return;
 
-    scenePositions = smoothPositions(projectToScene(pts, exaggeration.value), 2);
+    const projected = projectPoints(pts, exaggeration.value);
+    scenePositions = smoothPositions(projected.positions, 2);
     const pos = scenePositions;
+    lastProjection = projected.projection;
+    lastPts = pts;
+    if (terrainVisible.value && projected.projection) {
+      void loadTerrain(projected.projection, pts);
+    } else {
+      disposeTerrain();
+    }
 
     // Update orbit target to route centroid
     const centroid = pos
@@ -200,6 +199,53 @@ export function useThreeScene(
     routeGroup.add(endSphere);
 
     scene.add(routeGroup);
+  }
+
+  function disposeTerrain(): void {
+    if (!terrainGroup || !scene) return;
+    scene.remove(terrainGroup);
+    terrainGroup.traverse((obj) => {
+      const d = obj as unknown as DisposableObj;
+      d.geometry?.dispose();
+      if (d.material) {
+        if (Array.isArray(d.material)) d.material.forEach((m) => m.dispose());
+        else d.material.dispose();
+      }
+    });
+    terrainGroup = null;
+  }
+
+  async function loadTerrain(
+    projection: ReturnType<typeof projectPoints>["projection"],
+    pts: GpxPoint[],
+  ): Promise<void> {
+    if (!projection) return;
+    if (terrainAbort) terrainAbort.abort();
+    terrainAbort = new AbortController();
+    const signal = terrainAbort.signal;
+    const bbox = {
+      minLat: Math.min(...pts.map((p) => p.lat)),
+      maxLat: Math.max(...pts.map((p) => p.lat)),
+      minLon: Math.min(...pts.map((p) => p.lon)),
+      maxLon: Math.max(...pts.map((p) => p.lon)),
+    };
+    terrainLoading.value = true;
+    try {
+      const g = await buildTerrainContours(projection, bbox, { signal });
+      if (signal.aborted || !scene) return;
+      disposeTerrain();
+      if (g) {
+        g.visible = terrainVisible.value;
+        terrainGroup = g;
+        scene.add(g);
+      }
+    } catch (e) {
+      if ((e as Error).name !== "AbortError") {
+        console.warn("terrain load failed", e);
+      }
+    } finally {
+      if (!signal.aborted) terrainLoading.value = false;
+    }
   }
 
   function initScene(canvas: HTMLCanvasElement): void {
@@ -363,6 +409,7 @@ export function useThreeScene(
 
   onUnmounted(() => {
     stopFlyMode();
+    if (terrainAbort) terrainAbort.abort();
     if (animId) cancelAnimationFrame(animId);
     window.removeEventListener("resize", handleResize);
     if (scene) {
@@ -380,11 +427,24 @@ export function useThreeScene(
   });
 
   watch([points, exaggeration], buildGeometry, { deep: true });
+  watch(terrainVisible, (v) => {
+    if (v) {
+      if (terrainGroup) {
+        terrainGroup.visible = true;
+      } else if (lastProjection && lastPts.length > 1) {
+        void loadTerrain(lastProjection, lastPts);
+      }
+    } else if (terrainGroup) {
+      terrainGroup.visible = false;
+    }
+  });
 
   return {
     camera,
     orbitState,
     flyProgress,
+    terrainVisible,
+    terrainLoading,
     resetView,
     setTopView,
     setSideView,
