@@ -5,6 +5,7 @@ export interface GpxPoint {
   lat: number;
   lon: number;
   ele: number;
+  time?: number; // epoch ms, from <time> element
 }
 
 export interface RouteStats {
@@ -24,11 +25,16 @@ function parseGpx(xmlString: string): GpxPoint[] {
   if (doc.querySelector("parsererror")) throw new Error("Invalid GPX XML");
   const trkpts = doc.querySelectorAll("trkpt");
   if (trkpts.length === 0) throw new Error("No track points found in file");
-  return Array.from(trkpts).map((pt) => ({
-    lat: parseFloat(pt.getAttribute("lat") ?? "0"),
-    lon: parseFloat(pt.getAttribute("lon") ?? "0"),
-    ele: parseFloat(pt.querySelector("ele")?.textContent ?? "0"),
-  }));
+  return Array.from(trkpts).map((pt) => {
+    const timeStr = pt.querySelector("time")?.textContent;
+    const time = timeStr ? new Date(timeStr).getTime() : undefined;
+    return {
+      lat: parseFloat(pt.getAttribute("lat") ?? "0"),
+      lon: parseFloat(pt.getAttribute("lon") ?? "0"),
+      ele: parseFloat(pt.querySelector("ele")?.textContent ?? "0"),
+      time,
+    };
+  });
 }
 
 export function useGpxParser() {
