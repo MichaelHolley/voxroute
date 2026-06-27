@@ -151,26 +151,5 @@ defineExpose({ setError: (msg: string) => (errorMsg.value = msg) });
         Load demo route
       </button>
     </div>
-
-    <!-- Legend -->
-    <div class="flex flex-wrap gap-x-5 gap-y-3 justify-center mt-2">
-      <span
-        v-for="item in legend"
-        :key="item.label"
-        class="flex items-center gap-[0.4rem] text-[0.78rem] text-vr-muted"
-      >
-        <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="{ background: item.color }"></span>
-        {{ item.label }}
-      </span>
-    </div>
   </div>
 </template>
-
-<script lang="ts">
-const legend = [
-  { color: "#22c55e", label: "< 3% flat" },
-  { color: "#eab308", label: "3–6% moderate" },
-  { color: "#ef4444", label: "6–10% steep" },
-  { color: "#7c3aed", label: "> 10% very steep" },
-];
-</script>
