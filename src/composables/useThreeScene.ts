@@ -7,12 +7,9 @@ type DisposableObj = {
 };
 import { haversineDistance } from "../utils/haversine.ts";
 import { slopeColor } from "../utils/gradientColor.ts";
-import { speedColor } from "../utils/speedColor.ts";
 import { projectPoints } from "../utils/projection.ts";
 import { buildTerrainContours } from "./useTerrain.ts";
 import type { GpxPoint } from "./useGpxParser.ts";
-
-export type ColorMode = "slope" | "speed";
 
 export interface OrbitState {
   theta: Ref<number>;
@@ -44,7 +41,6 @@ export function useThreeScene(
   canvasRef: Ref<HTMLCanvasElement | null>,
   points: Ref<GpxPoint[]> | ComputedRef<GpxPoint[]>,
   exaggeration: Ref<number>,
-  colorMode: Ref<ColorMode> | ComputedRef<ColorMode>,
 ) {
   const camera = ref<THREE.PerspectiveCamera | null>(null);
   const flyProgress = ref(0);
@@ -74,7 +70,6 @@ export function useThreeScene(
   const FLY_DURATION = 22000;
   let routeMeshGeo: THREE.BufferGeometry | null = null;
   let slopeColorsArr: Float32Array | null = null;
-  let speedColorsArr: Float32Array | null = null;
 
   // Draw-on reveal: animate the tube from start→finish so route direction reads instantly
   const REVEAL_DURATION = 1100;
@@ -157,28 +152,9 @@ export function useThreeScene(
     const tubularSegments = Math.min(Math.max(pos.length * 8, 600), 6000);
     const geo = new THREE.TubeGeometry(flyCurve, tubularSegments, tubeR, radSeg, false);
 
-    // Precompute per-segment speeds if timestamps are present
-    const hasSpeed = pts.length > 1 && pts[0].time !== undefined && pts[1].time !== undefined;
-    const segSpeeds: number[] = [];
-    let avgSpeed = 0;
-    if (hasSpeed) {
-      let totalDist = 0;
-      let totalTime = 0;
-      for (let i = 0; i < pts.length - 1; i++) {
-        const d = haversineDistance(pts[i].lat, pts[i].lon, pts[i + 1].lat, pts[i + 1].lon);
-        const dt = ((pts[i + 1].time ?? 0) - (pts[i].time ?? 0)) / 1000;
-        const spd = dt > 0 ? d / dt : 0;
-        segSpeeds.push(spd);
-        totalDist += d;
-        if (dt > 0) totalTime += dt;
-      }
-      avgSpeed = totalTime > 0 ? totalDist / totalTime : 0;
-    }
-
-    // Precompute both slope and speed color arrays for instant mode swapping
+    // Precompute slope color array
     const vertexCount = (tubularSegments + 1) * (radSeg + 1);
     slopeColorsArr = new Float32Array(vertexCount * 3);
-    speedColorsArr = hasSpeed ? new Float32Array(vertexCount * 3) : null;
 
     let vi = 0;
     for (let i = 0; i <= tubularSegments; i++) {
@@ -186,23 +162,15 @@ export function useThreeScene(
       const origIdx = Math.min(Math.floor(t * (pts.length - 1)), pts.length - 2);
       const grade = computeGrade(pts[origIdx], pts[origIdx + 1]);
       const sc = new THREE.Color(slopeColor(grade));
-      const spc = hasSpeed ? new THREE.Color(speedColor(segSpeeds[origIdx] ?? 0, avgSpeed)) : null;
       for (let j = 0; j <= radSeg; j++) {
         slopeColorsArr[vi] = sc.r;
         slopeColorsArr[vi + 1] = sc.g;
         slopeColorsArr[vi + 2] = sc.b;
-        if (spc && speedColorsArr) {
-          speedColorsArr[vi] = spc.r;
-          speedColorsArr[vi + 1] = spc.g;
-          speedColorsArr[vi + 2] = spc.b;
-        }
         vi += 3;
       }
     }
 
-    const activeColors =
-      colorMode.value === "speed" && speedColorsArr ? speedColorsArr : slopeColorsArr;
-    geo.setAttribute("color", new THREE.Float32BufferAttribute(activeColors, 3));
+    geo.setAttribute("color", new THREE.Float32BufferAttribute(slopeColorsArr, 3));
     routeMeshGeo = geo;
     const mat = new THREE.MeshPhongMaterial({ vertexColors: true, shininess: 80 });
     routeGroup.add(new THREE.Mesh(geo, mat));
@@ -350,13 +318,6 @@ export function useThreeScene(
     } finally {
       if (!signal.aborted) terrainLoading.value = false;
     }
-  }
-
-  function applyColorMode(): void {
-    if (!routeMeshGeo) return;
-    const colors = colorMode.value === "speed" && speedColorsArr ? speedColorsArr : slopeColorsArr;
-    if (!colors) return;
-    routeMeshGeo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
   }
 
   function initScene(canvas: HTMLCanvasElement): void {
@@ -540,7 +501,6 @@ export function useThreeScene(
 
   watch(points, () => buildGeometry(true), { deep: true });
   watch(exaggeration, () => buildGeometry(false));
-  watch(colorMode, applyColorMode);
   watch(terrainVisible, (v) => {
     if (v) {
       if (terrainGroup) {

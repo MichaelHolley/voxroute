@@ -5,7 +5,7 @@ import ColorLegend from "./ColorLegend.vue";
 import SceneToolbar from "./SceneToolbar.vue";
 import ElevationSlider from "./ElevationSlider.vue";
 import FlyProgressBar from "./FlyProgressBar.vue";
-import { useThreeScene, type ColorMode } from "../composables/useThreeScene.ts";
+import { useThreeScene } from "../composables/useThreeScene.ts";
 import { useOrbitControls } from "../composables/useOrbitControls.ts";
 import type { GpxPoint } from "../composables/useGpxParser.ts";
 
@@ -23,13 +23,8 @@ const canvasRef = ref<HTMLCanvasElement | null>(null);
 const exaggeration = ref(2);
 const cameraMode = ref<CameraMode>("free");
 const isFlying = ref(false);
-const colorMode = ref<ColorMode>("speed");
 
 const pointsRef = computed(() => props.points);
-const hasTimestamps = computed(() => props.points.length > 0 && props.points[0].time !== undefined);
-const effectiveColorMode = computed<ColorMode>(() =>
-  colorMode.value === "speed" && hasTimestamps.value ? "speed" : "slope",
-);
 
 const {
   orbitState,
@@ -41,7 +36,7 @@ const {
   setSideView,
   startFlyMode,
   stopFlyMode,
-} = useThreeScene(canvasRef, pointsRef, exaggeration, effectiveColorMode);
+} = useThreeScene(canvasRef, pointsRef, exaggeration);
 
 const orbitControls = useOrbitControls(orbitState);
 
@@ -85,11 +80,7 @@ watch(flyProgress, (v) => {
     <canvas ref="canvasRef" class="block w-full h-full"></canvas>
 
     <!-- Color legend — bottom left above slider -->
-    <ColorLegend
-      v-model:color-mode="colorMode"
-      :effective-color-mode="effectiveColorMode"
-      :has-timestamps="hasTimestamps"
-    />
+    <ColorLegend />
 
     <!-- Camera controls — top right -->
     <div class="absolute top-4 right-4">
