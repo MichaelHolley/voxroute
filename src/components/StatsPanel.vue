@@ -85,24 +85,17 @@ const statCards = computed(() => [
 </script>
 
 <template>
-  <div class="bg-vr-surface border border-vr-line rounded-xl p-4">
-    <div class="text-[0.7rem] font-semibold tracking-[0.08em] uppercase text-vr-faint mb-3">
-      Route Statistics
-    </div>
-    <div class="grid grid-cols-5 gap-2 max-[600px]:grid-cols-3">
-      <div
-        v-for="card in statCards"
-        :key="card.label"
-        class="bg-vr-deep border border-[#1e1e2a] rounded-lg py-3 px-2 text-center transition-colors hover:border-[#2a2a4a]"
-      >
-        <div class="flex justify-center mb-1.5">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" v-html="card.icon"></svg>
-        </div>
-        <div class="text-[1.15rem] font-bold text-vr-text leading-tight tabular-nums">
+  <div
+    class="flex items-center gap-4 bg-[rgba(15,15,20,0.85)] border border-vr-line rounded-lg px-3.5 py-2 backdrop-blur-[8px]"
+  >
+    <div v-for="card in statCards" :key="card.label" class="flex items-center gap-2">
+      <svg width="16" height="16" viewBox="0 0 20 20" fill="none" v-html="card.icon"></svg>
+      <div class="leading-tight">
+        <div class="text-[0.9rem] font-bold text-vr-text tabular-nums">
           {{ card.value
-          }}<span class="text-[0.65rem] font-normal text-vr-faint ml-0.5">{{ card.unit }}</span>
+          }}<span class="text-[0.6rem] font-normal text-vr-faint ml-0.5">{{ card.unit }}</span>
         </div>
-        <div class="text-[0.65rem] text-vr-faint mt-1 uppercase tracking-[0.05em]">
+        <div class="text-[0.58rem] text-vr-faint uppercase tracking-[0.05em]">
           {{ card.label }}
         </div>
       </div>

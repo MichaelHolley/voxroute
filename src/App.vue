@@ -53,11 +53,9 @@ function onLoadNew() {
         </div>
       </div>
 
-      <div v-else key="visualize" class="flex flex-col h-screen">
-        <div class="flex-1 min-h-0">
-          <RouteCanvas :points="points" @load-new="onLoadNew" />
-        </div>
-        <div class="shrink-0 p-3 bg-vr-bg border-t border-vr-line">
+      <div v-else key="visualize" class="relative h-screen">
+        <RouteCanvas :points="points" @load-new="onLoadNew" />
+        <div class="absolute bottom-3 right-3 z-10">
           <StatsPanel :stats="stats" />
         </div>
       </div>
