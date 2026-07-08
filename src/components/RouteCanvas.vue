@@ -28,6 +28,14 @@ const effectiveColorMode = computed<ColorMode>(() =>
   colorMode.value === "speed" && hasTimestamps.value ? "speed" : "slope",
 );
 
+function slopeRange(index: number): string {
+  const stop = SLOPE_STOPS[index];
+  const lower = index > 0 ? SLOPE_STOPS[index - 1].max : null;
+  if (stop.max === Infinity) return `${stop.label} — grade > ${lower}%`;
+  if (lower === null) return `${stop.label} — grade ≤ ${stop.max}%`;
+  return `${stop.label} — grade > ${lower}% to ≤ ${stop.max}%`;
+}
+
 const {
   orbitState,
   flyProgress,
@@ -116,7 +124,12 @@ watch(flyProgress, (v) => {
 
       <!-- Slope legend -->
       <template v-if="effectiveColorMode === 'slope'">
-        <div v-for="stop in SLOPE_STOPS" :key="stop.label" class="flex items-center gap-[0.45rem]">
+        <div
+          v-for="(stop, i) in SLOPE_STOPS"
+          :key="stop.label"
+          :title="slopeRange(i)"
+          class="flex items-center gap-[0.45rem]"
+        >
           <span
             class="w-2.5 h-2.5 rounded-[2px] shrink-0"
             :style="{ background: stop.color }"
