@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, computed } from "vue";
+import GlassPanel from "./GlassPanel.vue";
 
 interface Stats {
   distance: number;
@@ -85,9 +86,7 @@ const statCards = computed(() => [
 </script>
 
 <template>
-  <div
-    class="flex items-center gap-4 bg-[rgba(15,15,20,0.85)] border border-vr-line rounded-lg px-3.5 py-2 backdrop-blur-[8px]"
-  >
+  <GlassPanel class="flex items-center gap-4 px-3.5 py-2">
     <div v-for="card in statCards" :key="card.label" class="flex items-center gap-2">
       <svg width="16" height="16" viewBox="0 0 20 20" fill="none" v-html="card.icon"></svg>
       <div class="leading-tight">
@@ -100,5 +99,5 @@ const statCards = computed(() => [
         </div>
       </div>
     </div>
-  </div>
+  </GlassPanel>
 </template>

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import GlassPanel from "./GlassPanel.vue";
+
 defineProps<{
   exaggeration: number;
 }>();
@@ -9,9 +11,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div
-    class="absolute bottom-4 left-4 flex items-center gap-2.5 bg-[rgba(15,15,20,0.85)] border border-vr-line rounded-lg px-3 py-[0.45rem] backdrop-blur-[8px]"
-  >
+  <GlassPanel class="absolute bottom-4 left-4 flex items-center gap-2.5 px-3 py-[0.45rem]">
     <label class="text-[0.72rem] text-vr-muted whitespace-nowrap w-[76px] tabular-nums">
       Elev. ×{{ Number(exaggeration).toFixed(1) }}
     </label>
@@ -25,7 +25,7 @@ const emit = defineEmits<{
       title="Elevation exaggeration"
       @input="emit('update:exaggeration', Number(($event.target as HTMLInputElement).value))"
     />
-  </div>
+  </GlassPanel>
 </template>
 
 <style scoped>

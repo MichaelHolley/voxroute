@@ -12,6 +12,8 @@ const emit = defineEmits<{
   "toggle-fly": [];
 }>();
 
+import GlassPanel from "./GlassPanel.vue";
+
 const modes: { id: CameraMode; label: string; icon: string }[] = [
   {
     id: "free",
@@ -36,7 +38,7 @@ const modes: { id: CameraMode; label: string; icon: string }[] = [
 </script>
 
 <template>
-  <div class="flex items-center gap-2 bg-vr-surface border border-vr-line rounded-[10px] p-1.5">
+  <GlassPanel class="flex items-center gap-2 p-1.5">
     <div class="flex gap-1">
       <button
         v-for="m in modes"
@@ -73,5 +75,5 @@ const modes: { id: CameraMode; label: string; icon: string }[] = [
         {{ Math.round(flyProgress * 100) }}%
       </span>
     </button>
-  </div>
+  </GlassPanel>
 </template>
