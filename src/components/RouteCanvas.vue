@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
 import ControlBar from "./ControlBar.vue";
+import ColorLegend from "./ColorLegend.vue";
 import { useThreeScene, type ColorMode } from "../composables/useThreeScene.ts";
 import { useOrbitControls } from "../composables/useOrbitControls.ts";
-import { SLOPE_STOPS } from "../utils/gradientColor.ts";
 import type { GpxPoint } from "../composables/useGpxParser.ts";
 
 type CameraMode = "free" | "top" | "side";
@@ -27,14 +27,6 @@ const hasTimestamps = computed(() => props.points.length > 0 && props.points[0].
 const effectiveColorMode = computed<ColorMode>(() =>
   colorMode.value === "speed" && hasTimestamps.value ? "speed" : "slope",
 );
-
-function slopeRange(index: number): string {
-  const stop = SLOPE_STOPS[index];
-  const lower = index > 0 ? SLOPE_STOPS[index - 1].max : null;
-  if (stop.max === Infinity) return `${stop.label} — grade > ${lower}%`;
-  if (lower === null) return `${stop.label} — grade ≤ ${stop.max}%`;
-  return `${stop.label} — grade > ${lower}% to ≤ ${stop.max}%`;
-}
 
 const {
   orbitState,
@@ -90,67 +82,11 @@ watch(flyProgress, (v) => {
     <canvas ref="canvasRef" class="block w-full h-full"></canvas>
 
     <!-- Color legend — bottom left above slider -->
-    <div
-      class="absolute bottom-[52px] left-4 bg-[rgba(15,15,20,0.85)] border border-vr-line rounded-lg px-3 py-2.5 backdrop-blur-[8px] flex flex-col gap-[0.45rem]"
-    >
-      <!-- Mode toggle -->
-      <div class="flex gap-1 mb-[0.15rem]">
-        <button
-          class="flex-1 px-2 py-[0.2rem] rounded-[5px] text-[0.68rem] font-[inherit] cursor-pointer transition-all duration-150 border"
-          :class="
-            effectiveColorMode === 'slope'
-              ? 'bg-vr-blue/15 border-vr-blue/40 text-vr-blue'
-              : 'bg-transparent border-transparent text-vr-muted hover:text-vr-soft hover:bg-vr-hover'
-          "
-          @click="colorMode = 'slope'"
-        >
-          Slope
-        </button>
-        <button
-          class="flex-1 px-2 py-[0.2rem] rounded-[5px] text-[0.68rem] font-[inherit] transition-all duration-150 border"
-          :class="[
-            hasTimestamps ? 'cursor-pointer' : 'cursor-not-allowed opacity-40',
-            effectiveColorMode === 'speed'
-              ? 'bg-vr-blue/15 border-vr-blue/40 text-vr-blue'
-              : 'bg-transparent border-transparent text-vr-muted hover:text-vr-soft hover:bg-vr-hover',
-          ]"
-          :disabled="!hasTimestamps"
-          :title="hasTimestamps ? 'Color by speed' : 'No timestamps in GPX'"
-          @click="hasTimestamps && (colorMode = 'speed')"
-        >
-          Speed
-        </button>
-      </div>
-
-      <!-- Slope legend -->
-      <template v-if="effectiveColorMode === 'slope'">
-        <div
-          v-for="(stop, i) in SLOPE_STOPS"
-          :key="stop.label"
-          :title="slopeRange(i)"
-          class="flex items-center gap-[0.45rem]"
-        >
-          <span
-            class="w-2.5 h-2.5 rounded-[2px] shrink-0"
-            :style="{ background: stop.color }"
-          ></span>
-          <span class="text-[0.7rem] text-vr-dim whitespace-nowrap">{{ stop.label }}</span>
-        </div>
-      </template>
-
-      <!-- Speed legend -->
-      <template v-else>
-        <div
-          class="h-[6px] w-[110px] rounded-full"
-          style="background: linear-gradient(to right, #378add, #22c55e, #ef4444)"
-        ></div>
-        <div class="flex justify-between w-[110px]">
-          <span class="text-[0.65rem] text-vr-dim">Slow</span>
-          <span class="text-[0.65rem] text-vr-dim">Avg</span>
-          <span class="text-[0.65rem] text-vr-dim">Fast</span>
-        </div>
-      </template>
-    </div>
+    <ColorLegend
+      v-model:color-mode="colorMode"
+      :effective-color-mode="effectiveColorMode"
+      :has-timestamps="hasTimestamps"
+    />
 
     <!-- Camera controls — top right -->
     <div class="absolute top-4 right-4">
