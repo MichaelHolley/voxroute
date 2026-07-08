@@ -2,6 +2,9 @@
 import { ref, computed, watch, onMounted } from "vue";
 import ControlBar from "./ControlBar.vue";
 import ColorLegend from "./ColorLegend.vue";
+import SceneToolbar from "./SceneToolbar.vue";
+import ElevationSlider from "./ElevationSlider.vue";
+import FlyProgressBar from "./FlyProgressBar.vue";
 import { useThreeScene, type ColorMode } from "../composables/useThreeScene.ts";
 import { useOrbitControls } from "../composables/useOrbitControls.ts";
 import type { GpxPoint } from "../composables/useGpxParser.ts";
@@ -99,137 +102,18 @@ watch(flyProgress, (v) => {
       />
     </div>
 
-    <!-- Reset + Load new — top left -->
-    <div class="absolute top-4 left-4 flex gap-2">
-      <button
-        class="flex items-center gap-[0.35rem] px-3 py-[0.45rem] rounded-[7px] border border-vr-line bg-[rgba(15,15,20,0.85)] text-vr-dim text-[0.78rem] font-[inherit] cursor-pointer backdrop-blur-[8px] transition-all duration-150 hover:bg-[rgba(30,32,48,0.9)] hover:text-vr-soft hover:border-vr-line-hi"
-        title="Reset camera"
-        @click="setMode('free')"
-      >
-        <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
-          <path
-            d="M3 10 A7 7 0 1 1 10 17"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linecap="round"
-          />
-          <path
-            d="M3 6 L3 10 L7 10"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </svg>
-        Reset
-      </button>
-      <button
-        class="flex items-center gap-[0.35rem] px-3 py-[0.45rem] rounded-[7px] border bg-[rgba(15,15,20,0.85)] text-[0.78rem] font-[inherit] cursor-pointer backdrop-blur-[8px] transition-all duration-150"
-        :class="
-          terrainVisible
-            ? 'border-vr-line-hi text-vr-soft hover:bg-[rgba(30,32,48,0.9)]'
-            : 'border-vr-line text-vr-muted hover:text-vr-soft hover:border-vr-line-hi'
-        "
-        :title="terrainVisible ? 'Hide terrain contours' : 'Show terrain contours'"
-        @click="terrainVisible = !terrainVisible"
-      >
-        <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
-          <path
-            d="M2 14 Q5 9 8 11 T14 9 T18 12"
-            stroke="currentColor"
-            stroke-width="1.4"
-            stroke-linecap="round"
-            fill="none"
-          />
-          <path
-            d="M2 17 Q6 13 10 14 T18 15"
-            stroke="currentColor"
-            stroke-width="1.4"
-            stroke-linecap="round"
-            opacity="0.6"
-            fill="none"
-          />
-          <path
-            d="M4 10 Q7 6 10 8 T16 7"
-            stroke="currentColor"
-            stroke-width="1.4"
-            stroke-linecap="round"
-            opacity="0.4"
-            fill="none"
-          />
-        </svg>
-        <span class="tabular-nums">{{ terrainLoading ? "…" : "Topo" }}</span>
-      </button>
-      <button
-        class="flex items-center gap-[0.35rem] px-3 py-[0.45rem] rounded-[7px] border border-vr-blue/30 bg-[rgba(15,15,20,0.85)] text-vr-blue text-[0.78rem] font-[inherit] cursor-pointer backdrop-blur-[8px] transition-all duration-150 hover:bg-vr-blue/12 hover:border-vr-blue/50"
-        @click="emit('load-new')"
-      >
-        <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
-          <path
-            d="M10 4 L10 16 M4 10 L16 10"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linecap="round"
-          />
-        </svg>
-        Load new
-      </button>
-    </div>
+    <!-- Scene actions — top left -->
+    <SceneToolbar
+      v-model:terrain-visible="terrainVisible"
+      :terrain-loading="terrainLoading"
+      @reset="setMode('free')"
+      @load-new="emit('load-new')"
+    />
 
     <!-- Elevation exaggeration — bottom left -->
-    <div
-      class="absolute bottom-4 left-4 flex items-center gap-2.5 bg-[rgba(15,15,20,0.85)] border border-vr-line rounded-lg px-3 py-[0.45rem] backdrop-blur-[8px]"
-    >
-      <label class="text-[0.72rem] text-vr-muted whitespace-nowrap w-[76px] tabular-nums">
-        Elev. ×{{ Number(exaggeration).toFixed(1) }}
-      </label>
-      <input
-        v-model.number="exaggeration"
-        type="range"
-        min="1"
-        max="20"
-        step="0.5"
-        class="exag-slider"
-        title="Elevation exaggeration"
-      />
-    </div>
+    <ElevationSlider v-model:exaggeration="exaggeration" />
 
     <!-- Fly progress bar — bottom edge -->
-    <div
-      class="absolute bottom-0 left-0 right-0 h-[3px] bg-vr-blue/15 transition-opacity duration-300"
-      :class="isFlying ? 'opacity-100' : 'opacity-0'"
-    >
-      <div
-        class="h-full bg-gradient-to-r from-vr-blue to-vr-purple transition-[width] duration-100"
-        :style="{ width: `${flyProgress * 100}%` }"
-      ></div>
-    </div>
+    <FlyProgressBar :is-flying="isFlying" :progress="flyProgress" />
   </div>
 </template>
-
-<style scoped>
-.exag-slider {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 90px;
-  height: 4px;
-  border-radius: 2px;
-  background: #2a2a3a;
-  outline: none;
-  cursor: pointer;
-}
-
-.exag-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #378add;
-  cursor: pointer;
-  transition: transform 0.1s;
-}
-
-.exag-slider::-webkit-slider-thumb:hover {
-  transform: scale(1.2);
-}
-</style>
