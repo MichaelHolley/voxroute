@@ -17,7 +17,7 @@ const emit = defineEmits<{
 }>();
 
 const canvasRef = ref<HTMLCanvasElement | null>(null);
-const exaggeration = ref(5);
+const exaggeration = ref(3);
 const cameraMode = ref<CameraMode>("free");
 const isFlying = ref(false);
 const colorMode = ref<ColorMode>("speed");
