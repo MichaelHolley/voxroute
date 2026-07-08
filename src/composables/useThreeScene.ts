@@ -76,6 +76,15 @@ export function useThreeScene(
   let slopeColorsArr: Float32Array | null = null;
   let speedColorsArr: Float32Array | null = null;
 
+  // Draw-on reveal: animate the tube from start→finish so route direction reads instantly
+  const REVEAL_DURATION = 1100;
+  let revealStartTime: number | null = null;
+  let revealTubeCount = 0;
+  let revealShadow: THREE.Line | null = null;
+  let revealShadowCount = 0;
+  const revealDrops: { line: THREE.Line; t: number }[] = [];
+  let revealEndSphere: THREE.Mesh | null = null;
+
   const orbitState: OrbitState = {
     theta: orbitTheta,
     phi: orbitPhi,
@@ -98,8 +107,12 @@ export function useThreeScene(
     camera.value.lookAt(t.x, t.y, t.z);
   }
 
-  function buildGeometry(): void {
+  function buildGeometry(reveal = false): void {
     if (!scene) return;
+    revealStartTime = null;
+    revealShadow = null;
+    revealEndSphere = null;
+    revealDrops.length = 0;
     if (routeGroup) {
       scene.remove(routeGroup);
       routeGroup.traverse((obj) => {
@@ -202,7 +215,8 @@ export function useThreeScene(
       transparent: true,
       opacity: 0.3,
     });
-    routeGroup.add(new THREE.Line(shadowGeo, shadowMat));
+    revealShadow = new THREE.Line(shadowGeo, shadowMat);
+    routeGroup.add(revealShadow);
 
     // Vertical drop lines for depth
     for (let i = 0; i < pos.length; i += 5) {
@@ -215,7 +229,9 @@ export function useThreeScene(
         transparent: true,
         opacity: 0.6,
       });
-      routeGroup.add(new THREE.Line(dropGeo, dropMat));
+      const dropLine = new THREE.Line(dropGeo, dropMat);
+      routeGroup.add(dropLine);
+      revealDrops.push({ line: dropLine, t: pos.length > 1 ? i / (pos.length - 1) : 0 });
     }
 
     // Start sphere
@@ -236,11 +252,57 @@ export function useThreeScene(
       emissive: 0xef4444,
       emissiveIntensity: 0.4,
     });
-    const endSphere = new THREE.Mesh(endGeo, endMat);
-    endSphere.position.copy(pos[pos.length - 1]);
-    routeGroup.add(endSphere);
+    revealEndSphere = new THREE.Mesh(endGeo, endMat);
+    revealEndSphere.position.copy(pos[pos.length - 1]);
+    routeGroup.add(revealEndSphere);
 
     scene.add(routeGroup);
+
+    if (reveal) startReveal();
+  }
+
+  function startReveal(): void {
+    if (!routeMeshGeo?.index) {
+      revealStartTime = null;
+      return;
+    }
+    revealTubeCount = routeMeshGeo.index.count;
+    routeMeshGeo.setDrawRange(0, 0);
+    if (revealShadow) {
+      const posAttr = revealShadow.geometry.getAttribute("position");
+      revealShadowCount = posAttr ? posAttr.count : 0;
+      revealShadow.geometry.setDrawRange(0, 0);
+    }
+    for (const d of revealDrops) d.line.visible = false;
+    if (revealEndSphere) revealEndSphere.visible = false;
+    revealStartTime = performance.now();
+  }
+
+  function updateReveal(): void {
+    if (revealStartTime === null) return;
+    const raw = Math.min((performance.now() - revealStartTime) / REVEAL_DURATION, 1);
+    // easeOutCubic: the head shoots out quickly, then settles at the finish
+    const t = 1 - Math.pow(1 - raw, 3);
+
+    if (routeMeshGeo) {
+      // snap to whole triangles (6 indices) so no partial faces flicker at the head
+      const count = Math.floor((revealTubeCount * t) / 6) * 6;
+      routeMeshGeo.setDrawRange(0, count);
+    }
+    if (revealShadow) {
+      revealShadow.geometry.setDrawRange(0, Math.max(2, Math.ceil(revealShadowCount * t)));
+    }
+    for (const d of revealDrops) {
+      if (!d.line.visible && t >= d.t) d.line.visible = true;
+    }
+
+    if (raw >= 1) {
+      routeMeshGeo?.setDrawRange(0, Infinity);
+      revealShadow?.geometry.setDrawRange(0, Infinity);
+      for (const d of revealDrops) d.line.visible = true;
+      if (revealEndSphere) revealEndSphere.visible = true;
+      revealStartTime = null;
+    }
   }
 
   function disposeTerrain(): void {
@@ -323,7 +385,7 @@ export function useThreeScene(
     const grid = new THREE.GridHelper(240, 48, 0x1a2540, 0x111926);
     scene.add(grid);
 
-    buildGeometry();
+    buildGeometry(true);
     startRenderLoop();
     window.addEventListener("resize", handleResize);
   }
@@ -341,6 +403,7 @@ export function useThreeScene(
   function startRenderLoop(): void {
     function loop() {
       animId = requestAnimationFrame(loop);
+      updateReveal();
       if (renderer && scene && camera.value) renderer.render(scene, camera.value);
     }
     loop();
@@ -475,7 +538,8 @@ export function useThreeScene(
     renderer = null;
   });
 
-  watch([points, exaggeration], buildGeometry, { deep: true });
+  watch(points, () => buildGeometry(true), { deep: true });
+  watch(exaggeration, () => buildGeometry(false));
   watch(colorMode, applyColorMode);
   watch(terrainVisible, (v) => {
     if (v) {
