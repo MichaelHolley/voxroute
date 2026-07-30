@@ -1,7 +1,7 @@
 <script setup lang="ts">
 type CameraMode = "free" | "top" | "side";
 
-const props = defineProps<{
+defineProps<{
   activeMode: CameraMode;
   isFlying: boolean;
   flyProgress: number;

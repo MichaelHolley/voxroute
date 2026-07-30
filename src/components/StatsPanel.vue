@@ -8,6 +8,7 @@ interface Stats {
   maxEle: number;
   minEle: number;
   pointCount: number;
+  duration: number;
 }
 
 const props = defineProps<{ stats: Stats }>();
@@ -18,6 +19,7 @@ const displayed = ref({
   maxEle: 0,
   minEle: 0,
   pointCount: 0,
+  duration: 0,
 });
 
 const ANIM_DURATION = 1000;
@@ -36,6 +38,7 @@ function animateTo(target: Stats) {
       maxEle: start.maxEle + (target.maxEle - start.maxEle) * ease,
       minEle: start.minEle + (target.minEle - start.minEle) * ease,
       pointCount: Math.round(start.pointCount + (target.pointCount - start.pointCount) * ease),
+      duration: start.duration + (target.duration - start.duration) * ease,
     };
     rafId = t < 1 ? requestAnimationFrame(tick) : null;
   };
@@ -56,6 +59,15 @@ function fmt(n: number, decimals = 0) {
   return n.toFixed(decimals);
 }
 
+/** Seconds as `h:mm` above an hour, otherwise whole minutes. */
+function fmtDuration(seconds: number): { value: string; unit: string } {
+  const totalMinutes = Math.round(seconds / 60);
+  if (totalMinutes < 60) return { value: String(totalMinutes), unit: "min" };
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return { value: `${hours}:${String(minutes).padStart(2, "0")}`, unit: "h" };
+}
+
 const statCards = computed(() => [
   {
     label: "Distance",
@@ -63,6 +75,15 @@ const statCards = computed(() => [
     unit: "km",
     icon: `<path d="M2 10 Q6 4 10 10 Q14 16 18 10" stroke="#378ADD" stroke-width="1.8" fill="none" stroke-linecap="round"/>`,
   },
+  ...(props.stats.duration > 0
+    ? [
+        {
+          label: "Duration",
+          ...fmtDuration(displayed.value.duration),
+          icon: `<circle cx="10" cy="10" r="7" stroke="#14b8a6" stroke-width="1.8" fill="none"/><path d="M10 6 L10 10 L13 12" stroke="#14b8a6" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`,
+        },
+      ]
+    : []),
   {
     label: "Elev. Gain",
     value: fmt(displayed.value.elevationGain),

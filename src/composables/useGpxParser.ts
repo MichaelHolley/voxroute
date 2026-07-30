@@ -14,6 +14,21 @@ export interface RouteStats {
   maxEle: number;
   minEle: number;
   pointCount: number;
+  /** Elapsed seconds between the first and last timestamped point; 0 when the track has no usable times. */
+  duration: number;
+}
+
+/** Elapsed seconds between the first and last point carrying a valid <time>. */
+function computeDuration(pts: GpxPoint[]): number {
+  let first: number | undefined;
+  let last: number | undefined;
+  for (const p of pts) {
+    if (p.time === undefined || Number.isNaN(p.time)) continue;
+    if (first === undefined) first = p.time;
+    last = p.time;
+  }
+  if (first === undefined || last === undefined) return 0;
+  return Math.max(0, (last - first) / 1000);
 }
 
 const DEMO_GPX_URL =
@@ -51,6 +66,7 @@ export function useGpxParser() {
         maxEle: 0,
         minEle: 0,
         pointCount: pts.length,
+        duration: 0,
       };
     }
     let distance = 0;
@@ -67,17 +83,9 @@ export function useGpxParser() {
       maxEle: Math.max(...eles),
       minEle: Math.min(...eles),
       pointCount: pts.length,
+      duration: computeDuration(pts),
     };
   });
-
-  function loadXml(xmlString: string): void {
-    error.value = null;
-    try {
-      points.value = parseGpx(xmlString);
-    } catch (e) {
-      error.value = (e as Error).message;
-    }
-  }
 
   async function loadFile(file: File): Promise<void> {
     error.value = null;
@@ -102,7 +110,7 @@ export function useGpxParser() {
     try {
       const res = await fetch(DEMO_GPX_URL);
       if (!res.ok) throw new Error(`Failed to fetch demo route (${res.status})`);
-      loadXml(await res.text());
+      points.value = parseGpx(await res.text());
     } catch (e) {
       error.value = e instanceof Error ? e.message : "Failed to load demo route";
     } finally {
@@ -116,5 +124,5 @@ export function useGpxParser() {
     loading.value = false;
   }
 
-  return { points, stats, error, loading, loadFile, loadXml, loadDemo, reset };
+  return { points, stats, error, loading, loadFile, loadDemo, reset };
 }

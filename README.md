@@ -1,13 +1,13 @@
 # VoxRoute
 
-3D GPX route visualizer. Upload a `.gpx` file and fly through your route rendered as a gradient-colored elevation tube in a Three.js scene.
+3D GPX route visualizer. Upload a `.gpx` file and fly through your route rendered as a slope-colored elevation tube in a Three.js scene.
 
 ## Features
 
 - Drag-and-drop or click to upload `.gpx` files
-- 3D CatmullRom tube with elevation-based color gradient
+- 3D CatmullRom tube colored by slope/grade, with a matching legend
 - Smooth fly-through camera animation with exponential damping
-- Stats panel: distance, elevation gain/loss, duration
+- Stats panel: distance, elevation gain, min/max elevation, duration, track points
 - Demo route included — no file needed to try it
 
 ## Stack
