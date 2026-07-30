@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, computed } from "vue";
+import { ref, watch, onMounted, onUnmounted, computed } from "vue";
 import GlassPanel from "./GlassPanel.vue";
 
 interface Stats {
@@ -20,14 +20,15 @@ const displayed = ref({
   pointCount: 0,
 });
 
+const ANIM_DURATION = 1000;
+let rafId: number | null = null;
+
 function animateTo(target: Stats) {
-  const steps = 40;
-  const interval = 25;
-  let step = 0;
+  if (rafId !== null) cancelAnimationFrame(rafId);
   const start = { ...displayed.value };
-  const id = setInterval(() => {
-    step++;
-    const t = step / steps;
+  const startTime = performance.now();
+  const tick = (now: number) => {
+    const t = Math.min((now - startTime) / ANIM_DURATION, 1);
     const ease = 1 - Math.pow(1 - t, 3);
     displayed.value = {
       distance: start.distance + (target.distance - start.distance) * ease,
@@ -36,11 +37,15 @@ function animateTo(target: Stats) {
       minEle: start.minEle + (target.minEle - start.minEle) * ease,
       pointCount: Math.round(start.pointCount + (target.pointCount - start.pointCount) * ease),
     };
-    if (step >= steps) clearInterval(id);
-  }, interval);
+    rafId = t < 1 ? requestAnimationFrame(tick) : null;
+  };
+  rafId = requestAnimationFrame(tick);
 }
 
 onMounted(() => animateTo(props.stats));
+onUnmounted(() => {
+  if (rafId !== null) cancelAnimationFrame(rafId);
+});
 watch(
   () => props.stats,
   (s) => animateTo(s),

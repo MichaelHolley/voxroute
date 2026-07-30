@@ -31,6 +31,7 @@ const {
   flyProgress,
   terrainVisible,
   terrainLoading,
+  terrainError,
   resetView,
   setTopView,
   setSideView,
@@ -100,6 +101,22 @@ watch(flyProgress, (v) => {
       @reset="setMode('free')"
       @load-new="emit('load-new')"
     />
+
+    <!-- Terrain load failure -->
+    <div
+      v-if="terrainError"
+      class="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-[rgba(239,68,68,0.12)] border border-[rgba(239,68,68,0.3)] text-[#f87171] px-3 py-[0.45rem] rounded-lg text-[0.78rem] backdrop-blur-[8px]"
+      role="alert"
+    >
+      <span>{{ terrainError }}</span>
+      <button
+        class="bg-transparent border-0 text-[#f87171] cursor-pointer p-0 font-[inherit] leading-none hover:text-vr-text"
+        aria-label="Dismiss terrain error"
+        @click="terrainError = null"
+      >
+        ✕
+      </button>
+    </div>
 
     <!-- Elevation exaggeration — bottom left -->
     <ElevationSlider v-model:exaggeration="exaggeration" />

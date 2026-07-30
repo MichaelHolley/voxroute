@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref } from "vue";
 import UploadZone from "./components/UploadZone.vue";
 import RouteCanvas from "./components/RouteCanvas.vue";
 import StatsPanel from "./components/StatsPanel.vue";
@@ -11,20 +11,14 @@ type View = "upload" | "visualize";
 const currentView = ref<View>("upload");
 const { points, stats, error, loading, loadFile, loadDemo, reset } = useGpxParser();
 
-const uploadZoneRef = ref<InstanceType<typeof UploadZone> | null>(null);
-
-watch(error, (msg) => {
-  if (msg) uploadZoneRef.value?.setError(msg);
-});
-
 async function onFileLoaded(file: File) {
   await loadFile(file);
   if (!error.value && points.value.length > 0) currentView.value = "visualize";
 }
 
-function onLoadDemo() {
-  loadDemo();
-  if (!error.value) currentView.value = "visualize";
+async function onLoadDemo() {
+  await loadDemo();
+  if (!error.value && points.value.length > 0) currentView.value = "visualize";
 }
 
 function onLoadNew() {
@@ -43,7 +37,7 @@ function onLoadNew() {
       leave-to-class="opacity-0 -translate-y-3"
     >
       <div v-if="currentView === 'upload'" key="upload" class="relative">
-        <UploadZone ref="uploadZoneRef" @file-loaded="onFileLoaded" @load-demo="onLoadDemo" />
+        <UploadZone :error="error" @file-loaded="onFileLoaded" @load-demo="onLoadDemo" />
         <div
           v-if="loading"
           class="fixed inset-0 flex flex-col items-center justify-center gap-4 text-vr-muted text-sm backdrop-blur-sm z-[100] bg-[rgba(10,10,15,0.85)]"

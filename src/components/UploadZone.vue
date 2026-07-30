@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { ref } from "vue";
 
+defineProps<{ error?: string | null }>();
+
 const emit = defineEmits<{
   "file-loaded": [file: File];
   "load-demo": [];
 }>();
 
 const isDragOver = ref(false);
-const errorMsg = ref("");
 const fileInputRef = ref<HTMLInputElement | null>(null);
 
 function onDragOver(e: DragEvent) {
@@ -29,22 +30,14 @@ function onFileInput(e: Event) {
   if (file) handleFile(file);
 }
 function handleFile(file: File) {
-  if (!file.name.endsWith(".gpx")) {
-    errorMsg.value = "Please upload a .gpx file.";
-    return;
-  }
-  errorMsg.value = "";
   emit("file-loaded", file);
 }
 function openPicker() {
   fileInputRef.value?.click();
 }
 function loadDemo() {
-  errorMsg.value = "";
   emit("load-demo");
 }
-
-defineExpose({ setError: (msg: string) => (errorMsg.value = msg) });
 </script>
 
 <template>
@@ -126,7 +119,7 @@ defineExpose({ setError: (msg: string) => (errorMsg.value = msg) });
 
     <!-- Error banner -->
     <div
-      v-if="errorMsg"
+      v-if="error"
       class="flex items-center gap-2 bg-[rgba(239,68,68,0.12)] border border-[rgba(239,68,68,0.3)] text-[#f87171] px-4 py-[0.6rem] rounded-lg text-sm max-w-[440px] w-full"
     >
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -138,7 +131,7 @@ defineExpose({ setError: (msg: string) => (errorMsg.value = msg) });
           stroke-linecap="round"
         />
       </svg>
-      {{ errorMsg }}
+      {{ error }}
     </div>
 
     <!-- Demo link -->

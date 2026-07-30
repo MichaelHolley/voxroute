@@ -55,6 +55,7 @@ export function useThreeScene(
   const orbitTarget = ref(new THREE.Vector3(0, 0, 0));
   const terrainVisible = ref(false);
   const terrainLoading = ref(false);
+  const terrainError = ref<string | null>(null);
 
   let renderer: THREE.WebGLRenderer | null = null;
   let scene: THREE.Scene | null = null;
@@ -314,6 +315,7 @@ export function useThreeScene(
       minLon: Math.min(...pts.map((p) => p.lon)),
       maxLon: Math.max(...pts.map((p) => p.lon)),
     };
+    terrainError.value = null;
     terrainLoading.value = true;
     try {
       const g = await buildTerrainContours(projection, bbox, { signal });
@@ -327,6 +329,9 @@ export function useThreeScene(
     } catch (e) {
       if ((e as Error).name !== "AbortError") {
         console.warn("terrain load failed", e);
+        terrainError.value =
+          e instanceof Error ? `Terrain unavailable: ${e.message}` : "Terrain unavailable";
+        terrainVisible.value = false;
       }
     } finally {
       if (!signal.aborted) terrainLoading.value = false;
@@ -524,6 +529,7 @@ export function useThreeScene(
     flyProgress,
     terrainVisible,
     terrainLoading,
+    terrainError,
     resetView,
     setTopView,
     setSideView,

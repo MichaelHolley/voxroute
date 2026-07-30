@@ -81,6 +81,10 @@ export function useGpxParser() {
 
   async function loadFile(file: File): Promise<void> {
     error.value = null;
+    if (!file.name.endsWith(".gpx")) {
+      error.value = "Please upload a .gpx file.";
+      return;
+    }
     loading.value = true;
     try {
       const text = await file.text();
@@ -101,6 +105,7 @@ export function useGpxParser() {
       loadXml(await res.text());
     } catch (e) {
       error.value = e instanceof Error ? e.message : "Failed to load demo route";
+    } finally {
       loading.value = false;
     }
   }
