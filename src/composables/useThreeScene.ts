@@ -1,15 +1,20 @@
 import { ref, watch, onMounted, onUnmounted, type Ref, type ComputedRef } from "vue";
 import * as THREE from "three";
 
-type DisposableObj = {
-  geometry?: { dispose(): void };
-  material?: THREE.Material | THREE.Material[];
-};
 import { haversineDistance } from "../utils/haversine.ts";
 import { slopeColor } from "../utils/gradientColor.ts";
+import { disposeObject3D } from "../utils/disposeObject3D.ts";
+import { createBillboardLabel, updateBillboardScale } from "../utils/billboardLabel.ts";
+import {
+  pickElevationExtremes,
+  formatElevationLabel,
+  EXTREME_COLORS,
+} from "../utils/elevationLabels.ts";
 import { projectPoints } from "../utils/projection.ts";
 import { buildTerrainContours } from "./useTerrain.ts";
 import type { GpxPoint } from "./useGpxParser.ts";
+
+const CAMERA_FOV = 55;
 
 export interface OrbitState {
   theta: Ref<number>;
@@ -78,6 +83,7 @@ export function useThreeScene(
   let revealShadow: THREE.Line | null = null;
   let revealShadowCount = 0;
   const revealDrops: { line: THREE.Line; t: number }[] = [];
+  const revealLabels: { sprite: THREE.Sprite; t: number }[] = [];
   let revealEndSphere: THREE.Mesh | null = null;
 
   const orbitState: OrbitState = {
@@ -108,16 +114,10 @@ export function useThreeScene(
     revealShadow = null;
     revealEndSphere = null;
     revealDrops.length = 0;
+    revealLabels.length = 0;
     if (routeGroup) {
       scene.remove(routeGroup);
-      routeGroup.traverse((obj) => {
-        const d = obj as unknown as DisposableObj;
-        d.geometry?.dispose();
-        if (d.material) {
-          if (Array.isArray(d.material)) d.material.forEach((m) => m.dispose());
-          else d.material.dispose();
-        }
-      });
+      disposeObject3D(routeGroup);
       routeGroup = null;
     }
     const pts = points.value;
@@ -224,6 +224,21 @@ export function useThreeScene(
     revealEndSphere.position.copy(pos[pos.length - 1]);
     routeGroup.add(revealEndSphere);
 
+    for (const extreme of pickElevationExtremes(pts)) {
+      const anchorIdx = Math.min(extreme.index, pos.length - 1);
+      const sprite = createBillboardLabel(
+        formatElevationLabel(extreme.kind, extreme.ele),
+        EXTREME_COLORS[extreme.kind],
+      );
+      sprite.position.set(pos[anchorIdx].x, pos[anchorIdx].y + 0.7, pos[anchorIdx].z);
+      updateBillboardScale(sprite, CAMERA_FOV, canvasRef.value?.clientHeight ?? 0);
+      routeGroup.add(sprite);
+      revealLabels.push({
+        sprite,
+        t: pos.length > 1 ? anchorIdx / (pos.length - 1) : 0,
+      });
+    }
+
     scene.add(routeGroup);
 
     if (reveal) startReveal();
@@ -242,6 +257,7 @@ export function useThreeScene(
       revealShadow.geometry.setDrawRange(0, 0);
     }
     for (const d of revealDrops) d.line.visible = false;
+    for (const l of revealLabels) l.sprite.visible = false;
     if (revealEndSphere) revealEndSphere.visible = false;
     revealStartTime = performance.now();
   }
@@ -263,11 +279,15 @@ export function useThreeScene(
     for (const d of revealDrops) {
       if (!d.line.visible && t >= d.t) d.line.visible = true;
     }
+    for (const l of revealLabels) {
+      if (!l.sprite.visible && t >= l.t) l.sprite.visible = true;
+    }
 
     if (raw >= 1) {
       routeMeshGeo?.setDrawRange(0, Infinity);
       revealShadow?.geometry.setDrawRange(0, Infinity);
       for (const d of revealDrops) d.line.visible = true;
+      for (const l of revealLabels) l.sprite.visible = true;
       if (revealEndSphere) revealEndSphere.visible = true;
       revealStartTime = null;
     }
@@ -276,14 +296,7 @@ export function useThreeScene(
   function disposeTerrain(): void {
     if (!terrainGroup || !scene) return;
     scene.remove(terrainGroup);
-    terrainGroup.traverse((obj) => {
-      const d = obj as unknown as DisposableObj;
-      d.geometry?.dispose();
-      if (d.material) {
-        if (Array.isArray(d.material)) d.material.forEach((m) => m.dispose());
-        else d.material.dispose();
-      }
-    });
+    disposeObject3D(terrainGroup);
     terrainGroup = null;
   }
 
@@ -330,7 +343,7 @@ export function useThreeScene(
     scene.fog = new THREE.FogExp2(0x0a0a0f, 0.0025);
 
     camera.value = new THREE.PerspectiveCamera(
-      55,
+      CAMERA_FOV,
       canvas.clientWidth / canvas.clientHeight,
       0.1,
       2000,
@@ -359,6 +372,7 @@ export function useThreeScene(
     renderer.setSize(w, h);
     camera.value.aspect = w / h;
     camera.value.updateProjectionMatrix();
+    for (const l of revealLabels) updateBillboardScale(l.sprite, CAMERA_FOV, h);
   }
 
   function startRenderLoop(): void {
@@ -394,7 +408,7 @@ export function useThreeScene(
         minZ = Math.min(minZ, p.z);
         maxZ = Math.max(maxZ, p.z);
       }
-      const fovV = (55 * Math.PI) / 180;
+      const fovV = (CAMERA_FOV * Math.PI) / 180;
       const aspect = canvasRef.value
         ? canvasRef.value.clientWidth / canvasRef.value.clientHeight
         : 1.6;
@@ -485,16 +499,7 @@ export function useThreeScene(
     if (terrainAbort) terrainAbort.abort();
     if (animId) cancelAnimationFrame(animId);
     window.removeEventListener("resize", handleResize);
-    if (scene) {
-      scene.traverse((obj) => {
-        const d = obj as unknown as DisposableObj;
-        d.geometry?.dispose();
-        if (d.material) {
-          if (Array.isArray(d.material)) d.material.forEach((m) => m.dispose());
-          else d.material.dispose();
-        }
-      });
-    }
+    if (scene) disposeObject3D(scene);
     renderer?.dispose();
     renderer = null;
   });
