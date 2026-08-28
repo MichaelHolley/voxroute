@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup lang="ts" vapor>
 defineProps<{
   isFlying: boolean;
   progress: number;
