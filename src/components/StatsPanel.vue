@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup lang="ts" vapor>
 import { ref, watch, onMounted, onUnmounted, computed } from "vue";
 import GlassPanel from "./GlassPanel.vue";
 

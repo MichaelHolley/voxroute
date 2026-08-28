@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup lang="ts" vapor>
 import { ref, computed, watch, onMounted } from "vue";
 import ControlBar from "./ControlBar.vue";
 import ColorLegend from "./ColorLegend.vue";

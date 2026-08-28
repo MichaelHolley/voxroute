@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup lang="ts" vapor>
 // Shared translucent "glass" container for all floating overlay panels
 // (control bar, stats, legend, slider). Single source of truth for the
 // surface treatment: background tint, border, radius and backdrop blur.
