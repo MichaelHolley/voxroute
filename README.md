@@ -12,7 +12,7 @@
 
 ## Stack
 
-- **Vue 3** + TypeScript (Composition API, `<script setup>`)
+- **Vue 3.6** + TypeScript (Composition API, `<script setup>`, opted into Vapor mode per-component)
 - **Three.js** for 3D rendering
 - **Tailwind CSS v4** via `@tailwindcss/vite`
 - **Vite+** (`vp`) for dev, build, lint, type-check

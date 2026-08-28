@@ -1,4 +1,6 @@
-<script setup lang="ts">
+<script setup lang="ts" vapor>
+import GlassPanel from "./GlassPanel.vue";
+
 type CameraMode = "free" | "top" | "side";
 
 defineProps<{
@@ -11,8 +13,6 @@ const emit = defineEmits<{
   "set-mode": [mode: CameraMode];
   "toggle-fly": [];
 }>();
-
-import GlassPanel from "./GlassPanel.vue";
 
 const modes: { id: CameraMode; label: string; icon: string }[] = [
   {

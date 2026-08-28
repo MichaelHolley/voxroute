@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup lang="ts" vapor>
 import { SLOPE_STOPS } from "../utils/gradientColor.ts";
 
 function slopeRange(index: number): string {
